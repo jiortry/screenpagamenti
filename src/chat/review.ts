@@ -4,6 +4,7 @@ import { formatClock } from '../engine/format.ts'
 import { localeMeta } from '../engine/languages.ts'
 import { maybeAvatar, pickPeerColor, pickSkyWall } from './avatars.ts'
 import { chatUi } from './copy.ts'
+import { messIncoming, peerSlop } from './messy.ts'
 import type { ReviewScript } from './openrouter.ts'
 import { chance, pick, randInt, type Rng } from '../engine/random.ts'
 import { skinById } from './skins.ts'
@@ -67,6 +68,7 @@ export function assembleReviewChat(
 
   const allowPayPhoto = Boolean(opts.paymentPng)
   let payUsed = false
+  const slop = peerSlop(rng)
 
   for (let i = 0; i < opts.script.turns.length; i++) {
     const turn = opts.script.turns[i]!
@@ -110,6 +112,7 @@ export function assembleReviewChat(
 
     let text = maybeEmoji((turn.text ?? 'ok').trim(), rng)
     if (!text) text = 'ok'
+    if (from === 'peer') text = messIncoming(text, rng, 'en', slop)
 
     messages.push({
       id: `t-${i}`,

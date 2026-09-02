@@ -7,6 +7,7 @@ import { synthPerson } from '../engine/names.ts'
 import { chance, pick, randInt, type Rng } from '../engine/random.ts'
 import { maybeAvatar, pickPeerColor, pickPhoto, pickSkyWall } from './avatars.ts'
 import { chatUi, NICKS, scriptsFor, type Author, type Script, type Turn } from './copy.ts'
+import { messIncoming, peerSlop } from './messy.ts'
 import type { ChatMessage, ChatPeer, ChatScenario, MsgStatus, TgSkinId } from './types.ts'
 import { skinById } from './skins.ts'
 
@@ -105,10 +106,12 @@ function expandTurns(
   start: Date,
   bcp47: string,
   clock24h: boolean,
+  locale: LocaleId,
 ): ChatMessage[] {
   const out: ChatMessage[] = []
   let t = start.getTime()
   const texts: { i: number; text: string; author: string; color: string }[] = []
+  const slop = peerSlop(rng)
 
   for (let i = 0; i < script.turns.length; i++) {
     const turn = script.turns[i] as Turn
@@ -159,7 +162,7 @@ function expandTurns(
         status,
         photo: pickPhoto(rng),
         photoAspect: aspect,
-        text: turn.t,
+        text: who.from === 'peer' && turn.t ? messIncoming(turn.t, rng, locale, slop) : turn.t,
         reactions,
       })
       continue
@@ -183,7 +186,8 @@ function expandTurns(
       if (src) reply = { author: src.author, text: src.text, color: src.color }
     }
 
-    const text = maybeTextEmoji(turn.t, rng)
+    const raw = maybeTextEmoji(turn.t, rng)
+    const text = who.from === 'peer' ? messIncoming(raw, rng, locale, slop) : raw
     const msg: ChatMessage = {
       id,
       from: who.from,
@@ -250,7 +254,7 @@ export function createChatScenario(rng: Rng, seed: number, opts: ChatGenOpts): C
   const now = Date.now()
   const ts = new Date(now - randInt(rng, 2, 90) * 60000)
   const start = new Date(ts.getTime() - randInt(rng, 8, 90) * 60000)
-  const messages = expandTurns(rng, script, members, ui, start, loc.bcp47, loc.clock24h)
+  const messages = expandTurns(rng, script, members, ui, start, loc.bcp47, loc.clock24h, loc.id)
 
   const typing = kind === 'dm' && peer.online && chance(rng, 0.18)
   const region = pickRegion(rng, loc.id)
