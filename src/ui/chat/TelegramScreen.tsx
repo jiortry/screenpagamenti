@@ -103,27 +103,36 @@ function Meta({
   skin,
   mine,
   editedLabel,
+  mode = 'abs',
 }: {
   m: ChatMessage
   skin: TgSkin
   mine: boolean
   editedLabel: string
+  mode?: 'abs' | 'inline'
 }) {
   const color = mine ? skin.outTime : skin.inTime
+  const inline = mode === 'inline'
   return (
     <span
       style={{
-        position: 'absolute',
-        right: 8,
-        bottom: 4,
+        position: inline ? 'relative' : 'absolute',
+        right: inline ? undefined : 7,
+        bottom: inline ? undefined : 5,
         display: 'inline-flex',
         alignItems: 'center',
+        alignSelf: inline ? 'flex-end' : undefined,
+        flexShrink: 0,
         gap: 3,
+        marginLeft: inline ? 2 : 0,
+        paddingBottom: inline ? 1 : 0,
         fontSize: 11,
         lineHeight: 1,
+        height: 13,
         color,
         fontWeight: 400,
         letterSpacing: 0.1,
+        whiteSpace: 'nowrap',
       }}
     >
       {m.edited && (
@@ -141,12 +150,14 @@ function BubbleShell({
   tail,
   children,
   photo,
+  maxW,
 }: {
   mine: boolean
   skin: TgSkin
   tail: boolean
   children: ReactNode
   photo?: boolean
+  maxW: number
 }) {
   const bg = mine ? skin.outBg : skin.inBg
   const radius = photo ? 14 : 16
@@ -158,13 +169,14 @@ function BubbleShell({
       style={{
         position: 'relative',
         display: 'inline-block',
-        maxWidth: photo ? '100%' : '78%',
+        width: 'fit-content',
+        maxWidth: photo ? '100%' : maxW,
         background: photo ? 'transparent' : bg,
         color: mine ? skin.outFg : skin.inFg,
         borderRadius: br,
         boxShadow: photo ? 'none' : '0 1px 1.5px rgba(0,0,0,0.12)',
-        padding: photo ? 0 : '7px 12px 6px 11px',
-        overflow: photo ? 'visible' : 'visible',
+        padding: photo ? 0 : '5px 8px 4px 10px',
+        overflow: 'visible',
       }}
     >
       {children}
@@ -208,13 +220,15 @@ function TextBody({
   return (
     <>
       {m.forwardedFrom && (
-        <div style={{ fontSize: 13, fontWeight: 600, color: mine ? skin.replyBar : skin.accent, marginBottom: 3 }}>
+        <div style={{ flexBasis: '100%', width: '100%', fontSize: 13, fontWeight: 600, color: mine ? skin.replyBar : skin.accent, marginBottom: 3 }}>
           {ui.forwarded} {m.forwardedFrom}
         </div>
       )}
       {m.reply && (
         <div
           style={{
+            flexBasis: '100%',
+            width: '100%',
             display: 'flex',
             gap: 6,
             margin: '0 0 6px',
@@ -234,9 +248,29 @@ function TextBody({
           </span>
         </div>
       )}
-      <span style={{ fontSize: skin.platform === 'ios' ? 17 : 16, lineHeight: 1.28, wordBreak: 'break-word', color: mine ? skin.outFg : skin.inFg }}>
-        {redact ? paintCensor(m.text ?? '', seed) : m.text}
-        <span style={{ display: 'inline-block', width: m.status ? 54 : 36, height: 11 }} />
+      <span
+        style={{
+          display: 'inline-flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
+          alignItems: 'flex-end',
+          gap: 7,
+          maxWidth: '100%',
+        }}
+      >
+        <span
+          style={{
+            fontSize: skin.platform === 'ios' ? 17 : 16,
+            lineHeight: 1.312,
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'normal',
+            wordBreak: 'normal',
+            color: mine ? skin.outFg : skin.inFg,
+          }}
+        >
+          {redact ? paintCensor(m.text ?? '', seed) : m.text}
+        </span>
+        <Meta m={m} skin={skin} mine={mine} editedLabel={ui.edited} mode="inline" />
       </span>
       {m.link && (
         <div
@@ -253,7 +287,6 @@ function TextBody({
           <div style={{ fontSize: 13, opacity: 0.78 }}>{m.link.desc}</div>
         </div>
       )}
-      <Meta m={m} skin={skin} mine={mine} editedLabel={ui.edited} />
     </>
   )
 }
@@ -488,13 +521,25 @@ function MessageRow({
           {showAvatar ? <Avatar peer={peer} size={32} hideInitials={s.redactNames} /> : null}
         </span>
       )}
-      <div style={{ maxWidth: m.kind === 'photo' ? '96%' : '82%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+      <div
+        style={{
+          maxWidth: m.kind === 'photo' ? '96%' : '82%',
+          width: 'fit-content',
+          marginLeft: mine ? 'auto' : 0,
+        }}
+      >
         {showName && !mine && s.kind === 'group' && (
           <div style={{ fontSize: 13, fontWeight: 650, color: peer.color, padding: '0 10px 2px' }}>
             {s.redactNames ? <RedactedName name={peer.name} seed={s.seed ^ 0x91} fontSize={13} /> : peer.name}
           </div>
         )}
-        <BubbleShell mine={mine} skin={skin} tail={tail} photo={m.kind === 'photo'}>
+        <BubbleShell
+          mine={mine}
+          skin={skin}
+          tail={tail}
+          photo={m.kind === 'photo'}
+          maxW={Math.round((s.device.width - (s.kind === 'group' && !mine ? 42 : 8)) * 0.78)}
+        >
           {m.kind === 'voice' && <VoiceBody m={m} skin={skin} mine={mine} editedLabel={ui.edited} />}
           {m.kind === 'photo' && (
             <PhotoBody
