@@ -319,6 +319,7 @@ export function PrimaryButton({
         fontWeight: 700,
         fontSize: '0.95em',
         flex: wide ? 1 : undefined,
+        boxShadow: `0 2px 8px ${theme.button}44`,
       }}
     >
       {label}

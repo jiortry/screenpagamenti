@@ -8,6 +8,7 @@ import type {
   Scenario,
   TxStatus,
   VisualVars,
+  Appearance,
 } from '../types.ts'
 import { sampleEurAmount, sampleFeeEur } from './amounts.ts'
 import { sampleDevice, sampleFontScale } from './devices.ts'
@@ -28,7 +29,7 @@ import { pickCarrier } from './carriers.ts'
 import { convertFromEur, isCryptoQuote } from './math.ts'
 import { synthPair } from './names.ts'
 import { chance, pick, pickWeighted, randInt, type Rng } from './random.ts'
-import { pickAppearance, pickLayout, pickTheme } from './themes.ts'
+import { pickLayout, pickTheme } from './themes.ts'
 import {
   CANCEL_REASONS,
   FAIL_REASONS,
@@ -178,9 +179,7 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   const layoutId = pickLayout(category)
   const institution = pickInstitution(rng, category, locale.id)
   const brand = brandProfile(institution)
-  const appearance = brand.preferDark
-    ? 'dark'
-    : pickAppearance(rng, themeId, device.family)
+  const appearance: Appearance = brand.preferDark ? 'dark' : 'light'
   const { sender, recipient } = synthPair(rng, locale.id)
   const amountEur = sampleEurAmount(rng)
   const feeEur = sampleFeeEur(rng, category, amountEur)
