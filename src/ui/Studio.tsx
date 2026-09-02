@@ -5,9 +5,11 @@ import type { RateBook, RateError, Scenario } from '../types.ts'
 import { mulberry32 } from '../engine/random.ts'
 import { loadRates } from '../engine/rates.ts'
 import { createScenario } from '../engine/scenario.ts'
+import { applyPhotoArtifacts } from '../engine/capture.ts'
 import { qcImage, qcLayout, qcScenario, type QcIssue } from '../engine/quality.ts'
 import { PaymentScreen } from './PaymentScreen.tsx'
 import { SkinGallery } from './SkinGallery.tsx'
+import { ModeNav, type StudioMode } from './ModeNav.tsx'
 
 type Accepted = {
   scenario: Scenario
@@ -44,7 +46,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
-export function Studio() {
+export function Studio({ onMode }: { onMode?: (m: StudioMode) => void }) {
   const captureRef = useRef<HTMLDivElement>(null)
   const [rates, setRates] = useState<RateBook | RateError | null>(null)
   const [scenario, setScenario] = useState<Scenario | null>(null)
@@ -104,7 +106,7 @@ export function Studio() {
       }
       let png: string
       try {
-        png = await withTimeout(
+        const raw = await withTimeout(
           toPng(el, {
             pixelRatio: Math.min(3, Math.max(1.5, s.device.density)),
             cacheBust: false,
@@ -113,6 +115,7 @@ export function Studio() {
           12000,
           'capture timeout',
         )
+        png = await applyPhotoArtifacts(raw, s.capture, s.seed)
       } catch (err) {
         rejected.push(`#${attempt} capture: ${err instanceof Error ? err.message : String(err)}`)
         continue
@@ -208,6 +211,7 @@ export function Studio() {
   return (
     <div className="studio" data-ready={lastPng ? '1' : '0'} data-busy={busy ? '1' : '0'}>
       <aside className="panel">
+        {onMode && <ModeNav current="payments" onMode={onMode} />}
         <p className="eyebrow">Synthetic dataset studio</p>
         <h1>Payment screen generator</h1>
         <p className="lede">
@@ -291,6 +295,7 @@ export function Studio() {
             <div><dt>Locale</dt><dd>{scenario.locale} · {scenario.bcp47} · {scenario.dir}</dd></div>
             <div><dt>Device</dt><dd>{scenario.device.label} {scenario.device.width}×{scenario.device.height}</dd></div>
             <div><dt>Category</dt><dd>{scenario.category}</dd></div>
+            <div><dt>Timezone</dt><dd>{scenario.timezone}</dd></div>
             <div><dt>Status</dt><dd>{scenario.status}</dd></div>
             <div><dt>Institution</dt><dd>{scenario.institution.name}</dd></div>
             <div><dt>Tx</dt><dd>{scenario.transactionId}</dd></div>

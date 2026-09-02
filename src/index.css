@@ -30,6 +30,9 @@
 @font-face { font-family: 'Outfit'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/outfit-600.woff2') format('woff2'); }
 @font-face { font-family: 'Outfit'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/outfit-700.woff2') format('woff2'); }
 @font-face { font-family: 'Outfit'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/outfit-800.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/roboto-400.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/roboto-500.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/roboto-700.woff2') format('woff2'); }
 @font-face { font-family: 'Sora'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/sora-400.woff2') format('woff2'); }
 @font-face { font-family: 'Sora'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/sora-600.woff2') format('woff2'); }
 @font-face { font-family: 'Sora'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/sora-700.woff2') format('woff2'); }
@@ -203,6 +206,98 @@ button:not(:disabled):hover {
   height: 120px;
   object-fit: cover;
   object-position: top;
+}
+
+.mode-nav {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 18px;
+}
+
+.mode-nav button {
+  flex: 1;
+  font-size: 12px;
+  padding: 7px 8px;
+}
+
+.mode-nav button.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, #1c2330);
+}
+
+.skin-picks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.skin-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.skin-pick.on {
+  border-color: var(--accent);
+}
+
+.skin-swatch {
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 8px;
+}
+
+.skin-swatch i {
+  display: block;
+  height: 8px;
+  width: 58%;
+  border-radius: 6px;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12);
+}
+
+.wall-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.wall-picks button {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
+.wall-picks button.on,
+.actions button.on {
+  border-color: var(--accent);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+.field select {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #1c2330;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 650;
 }
 
 .json {

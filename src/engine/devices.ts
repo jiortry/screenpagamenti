@@ -240,6 +240,23 @@ export function deviceById(id: string): DeviceSpec {
   return ALL_DEVICES.find((d) => d.id === id) ?? IPHONE[0]
 }
 
+export function sampleIphone(rng: Rng): DeviceSpec {
+  return { ...pick(rng, IPHONE) }
+}
+
+export function sampleAndroidPhone(rng: Rng): DeviceSpec {
+  const list = [...PIXEL, ...SAMSUNG, ...ANDROID]
+  const base = pick(rng, list)
+  const jitterW = randInt(rng, -4, 6)
+  const jitterH = randInt(rng, -8, 12)
+  return {
+    ...base,
+    width: Math.max(320, base.width + jitterW),
+    height: Math.max(640, base.height + jitterH),
+    density: Math.round(randFloat(rng, 2, 3) * 4) / 4,
+  }
+}
+
 export function sampleDevice(rng: Rng): DeviceSpec {
   const total = FAMILIES.reduce((s, f) => s + f.weight, 0)
   let r = rng() * total
