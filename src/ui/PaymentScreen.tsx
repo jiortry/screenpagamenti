@@ -1,5 +1,5 @@
 import type { Scenario } from '../types.ts'
-import { brandProfile, brandedTheme, statusBarColor, brandBackground } from '../engine/brands.ts'
+import { brandProfile, brandedTheme, statusBarColor, statusBarBackground, brandBackground } from '../engine/brands.ts'
 import { isCryptoQuote } from '../engine/math.ts'
 import { formatDateTime, formatFiat, formatQuote } from '../engine/format.ts'
 import { CRYPTO_LOGOS, carrierLogo } from '../engine/logos.ts'
@@ -50,15 +50,14 @@ function CoinGlyph({ kind }: { kind: string }) {
 
 export function PaymentScreen({ s }: { s: Scenario }) {
   const theme = screenTheme(s)
-  const brand = brandProfile(s.institution)
   const font = scriptFont(s.locale, theme.font)
   const chrome =
     s.device.family === 'iphone'
       ? '-apple-system, "SF Pro Text", "Noto Sans", sans-serif'
       : 'Roboto, "Noto Sans", sans-serif'
   const chromeColor = statusBarColor(s.institution)
+  const chromeBg = statusBarBackground(s.institution)
   const pad = Math.round(s.device.width * 0.048 * s.visual.spacingScale)
-  const fail = s.status === 'failed' || s.status === 'cancelled'
 
   return (
     <div
@@ -81,7 +80,7 @@ export function PaymentScreen({ s }: { s: Scenario }) {
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ fontFamily: chrome, background: brand.headerBg }}>
+      <div style={{ fontFamily: chrome, background: chromeBg }}>
         <StatusChrome s={s} color={chromeColor} />
       </div>
       <div
@@ -104,10 +103,18 @@ export function PaymentScreen({ s }: { s: Scenario }) {
         {s.layoutId === 'cash' && <CashLayout s={s} />}
         {s.layoutId === 'cards' && <CardsLayout s={s} />}
       </div>
-      <div style={{ fontFamily: chrome, background: fail ? theme.bg : theme.button }}>
-        <NavChrome s={s} color={brand.headerText} bg={fail ? theme.bg : theme.button} />
+      <div style={{ fontFamily: chrome, background: theme.bg }}>
+        <NavChrome s={s} color={chromeColor} bg={theme.bg} />
       </div>
     </div>
+  )
+}
+
+function BackChevron({ color }: { color: string }) {
+  return (
+    <svg width="12" height="20" viewBox="0 0 12 20" aria-hidden>
+      <path d="M10 2 2 10l8 8" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
@@ -116,43 +123,54 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
   const brand = brandProfile(s.institution)
   const loc = s.locale
   const bal = s.accountBalance ?? Math.round((s.amountEur * 2.4 + (s.seed % 1700) + 420) * 100) / 100
-  const full = brand.headerStyle === 'full'
+  const tint = statusTint(s.status, theme)
   return (
     <div
       style={{
-        marginInline: full ? -Math.round(s.device.width * 0.048 * s.visual.spacingScale) : -4,
-        marginTop: full ? -4 : -2,
-        padding: full ? '12px 16px 14px' : '8px 10px',
-        borderRadius: full ? 0 : theme.radius + 2,
+        marginInline: -Math.round(s.device.width * 0.048 * s.visual.spacingScale),
+        marginTop: -4,
+        padding: '6px 14px 10px',
         background: brand.headerBg,
         color: brand.headerText,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 8,
+        gap: 10,
+        borderBottom: `0.5px solid ${theme.line}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <AppLogo institution={s.institution} alt={s.institution.name} size={40} />
-        <div>
-          <div style={{ fontWeight: 800, fontSize: '0.98em', letterSpacing: -0.2 }}>{s.institution.name}</div>
-          {withBalance && s.visual.showBalance && (
-            <div style={{ opacity: 0.9, fontSize: '0.76em', fontWeight: 600 }}>
-              {t(loc, 'available')} {formatFiat(bal, 'EUR', s.bcp47)}
-            </div>
-          )}
+      <span style={{ display: 'flex', width: 22, flexShrink: 0, opacity: 0.9 }} aria-hidden>
+        <BackChevron color={brand.headerText} />
+      </span>
+      <AppLogo institution={s.institution} alt={s.institution.name} size={28} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: '0.92em',
+            letterSpacing: -0.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {s.institution.name}
         </div>
+        {withBalance && s.visual.showBalance && (
+          <div style={{ color: theme.muted, fontSize: '0.72em', fontWeight: 500 }}>
+            {t(loc, 'available')} {formatFiat(bal, 'EUR', s.bcp47)}
+          </div>
+        )}
       </div>
       <span
         style={{
           display: 'inline-flex',
-          padding: '4px 10px',
+          padding: '3px 8px',
           borderRadius: 999,
-          background: 'rgba(255,255,255,0.18)',
-          color: brand.headerText,
-          fontSize: '0.76em',
+          background: `${tint}22`,
+          color: tint,
+          fontSize: '0.68em',
           fontWeight: 700,
-          letterSpacing: 0.2,
+          letterSpacing: 0.15,
           flexShrink: 0,
         }}
       >
@@ -164,6 +182,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
 
 function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolean }) {
   const theme = screenTheme(s)
+  const brand = brandProfile(s.institution)
   const c = s.conversion
   const loc = s.locale
   const primary = primaryCrypto && isCryptoQuote(c.quote_currency)
@@ -186,7 +205,7 @@ function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolea
           letterSpacing: -0.8,
           lineHeight: 1.1,
           marginTop: 4,
-          color: theme.accent,
+          color: brand.amount,
         }}
       >
         {primary}

@@ -1,6 +1,8 @@
 import type { Appearance, Institution } from '../types.ts'
 import type { ThemeTokens } from './themes.ts'
 
+export type StatusBarTone = 'white' | 'black'
+
 export type BrandProfile = {
   icon?: string
   logoBg: string
@@ -26,281 +28,334 @@ export type BrandProfile = {
   success: string
   danger: string
   warning: string
-  statusBar: string
+  /** System status bar fill — only #FFFFFF or #000000. */
+  statusBarBg: '#FFFFFF' | '#000000'
+  /** Clock / signal / battery — opposite of the fill. */
+  statusBarFg: '#000000' | '#FFFFFF'
+  amount: string
 }
 
 const I = (id: string) => `/logos/icons/${id}.png`
 
-function mk(
-  id: string,
-  p: Omit<BrandProfile, 'icon' | 'font' | 'radius' | 'headerStyle' | 'accent2' | 'warning' | 'statusBar' | 'bg2' | 'chip' | 'success' | 'danger'> &
-    Partial<Pick<BrandProfile, 'font' | 'radius' | 'headerStyle' | 'accent2' | 'warning' | 'statusBar' | 'bg2' | 'chip' | 'success' | 'danger'>>,
-): BrandProfile {
+const SYS = '-apple-system, "SF Pro Text", Roboto, "Noto Sans", sans-serif'
+const INTER = 'Inter, "SF Pro Text", Roboto, "Noto Sans", sans-serif'
+const MANROPE = 'Manrope, "SF Pro Text", Roboto, "Noto Sans", sans-serif'
+const OUTFIT = 'Outfit, Roboto, "Noto Sans", sans-serif'
+const SORA = 'Sora, Roboto, "Noto Sans", sans-serif'
+const IBM = '"IBM Plex Sans", Roboto, "Noto Sans", sans-serif'
+const DM = '"DM Sans", Roboto, "Noto Sans", sans-serif'
+
+type BrandInput = {
+  logoBg: string
+  logoPad: number
+  logoRadius: number
+  preferDark: boolean
+  bg: string
+  surface: string
+  text: string
+  muted: string
+  line: string
+  accent: string
+  button: string
+  buttonText: string
+  font?: string
+  radius?: number
+  headerStyle?: 'full' | 'compact'
+  accent2?: string
+  warning?: string
+  bg2?: string
+  chip?: string
+  success?: string
+  danger?: string
+  headerBg?: string
+  headerText?: string
+  amount?: string
+}
+
+function mk(id: string, p: BrandInput): BrandProfile {
+  const dark = p.preferDark
+  const statusBarBg: '#FFFFFF' | '#000000' = dark ? '#000000' : '#FFFFFF'
+  const statusBarFg: '#000000' | '#FFFFFF' = dark ? '#FFFFFF' : '#000000'
   return {
     icon: I(id),
-    font: '-apple-system, "SF Pro Text", Roboto, "Noto Sans", sans-serif',
-    radius: 12,
-    headerStyle: 'full',
-    accent2: p.accent,
-    bg2: p.bg,
-    chip: p.surface,
-    success: '#16A34A',
-    danger: '#DC2626',
-    warning: '#D97706',
-    statusBar: p.headerText,
-    ...p,
+    font: p.font ?? SYS,
+    radius: p.radius ?? 12,
+    headerStyle: p.headerStyle ?? 'compact',
+    logoBg: p.logoBg,
+    logoPad: p.logoPad,
+    logoRadius: p.logoRadius,
+    preferDark: dark,
+    headerBg: p.headerBg ?? (dark ? '#000000' : '#FFFFFF'),
+    headerText: p.headerText ?? (dark ? '#FFFFFF' : p.text),
+    bg: p.bg,
+    bg2: p.bg2 ?? p.bg,
+    surface: p.surface,
+    text: p.text,
+    muted: p.muted,
+    line: p.line,
+    accent: p.accent,
+    accent2: p.accent2 ?? p.accent,
+    button: p.button,
+    buttonText: p.buttonText,
+    chip: p.chip ?? (dark ? '#2A2A2A' : '#F3F4F6'),
+    success: p.success ?? '#16A34A',
+    danger: p.danger ?? '#DC2626',
+    warning: p.warning ?? '#D97706',
+    statusBarBg,
+    statusBarFg,
+    amount: p.amount ?? (dark ? '#FFFFFF' : '#111111'),
   }
 }
 
 const PROFILES: Record<string, BrandProfile> = {
   'intesa-sanpaolo': mk('intesa-sanpaolo', {
     logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#258900', headerText: '#fff',
-    bg: '#F4F6F4', surface: '#fff', text: '#1A1A1A', muted: '#5C6B5C', line: '#DDE8DD',
+    bg: '#F4F5F4', surface: '#fff', text: '#1A1A1A', muted: '#5F6B5F', line: '#E4EAE4',
     accent: '#258900', button: '#258900', buttonText: '#fff',
+    success: '#258900',
   }),
   unicredit: mk('unicredit', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#E2001A', headerText: '#fff',
-    bg: '#F8F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DDDD',
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
+    bg: '#F7F7F7', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E8E8E8',
     accent: '#E2001A', button: '#E2001A', buttonText: '#fff',
+    radius: 8, font: IBM,
   }),
   fineco: mk('fineco', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#00549F', headerText: '#fff',
-    bg: '#F2F6FA', surface: '#fff', text: '#0F172A', muted: '#5C6B7A', line: '#DDE4EE',
-    accent: '#00549F', button: '#00549F', buttonText: '#fff', radius: 8,
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
+    bg: '#F3F6FA', surface: '#fff', text: '#0F2744', muted: '#5A6E82', line: '#DCE4EE',
+    accent: '#00549F', button: '#00549F', buttonText: '#fff',
+    radius: 8, font: IBM,
   }),
   chase: mk('chase', {
-    logoBg: '#117ACA', logoPad: 4, logoRadius: 10, preferDark: false,
-    headerBg: '#117ACA', headerText: '#fff',
-    bg: '#F0F4F8', surface: '#fff', text: '#0A2540', muted: '#5A6B7D', line: '#D4DEE8',
+    logoBg: '#117ACA', logoPad: 4, logoRadius: 8, preferDark: false,
+    bg: '#F5F7FA', surface: '#fff', text: '#0A2540', muted: '#5A6B7D', line: '#DCE3EA',
     accent: '#117ACA', button: '#117ACA', buttonText: '#fff',
+    radius: 8,
   }),
   'bank-of-america': mk('bank-of-america', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#012169', headerText: '#fff',
-    bg: '#F2F4F8', surface: '#fff', text: '#012169', muted: '#5C6478', line: '#D8DEE8',
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
+    bg: '#F4F5F7', surface: '#fff', text: '#012169', muted: '#5C6478', line: '#DDE1E8',
     accent: '#E31837', accent2: '#012169', button: '#012169', buttonText: '#fff',
+    radius: 6,
   }),
   'wells-fargo': mk('wells-fargo', {
-    logoBg: '#D71E28', logoPad: 4, logoRadius: 10, preferDark: false,
-    headerBg: '#D71E28', headerText: '#fff',
-    bg: '#F8F2F2', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8D8D8',
-    accent: '#D71E28', button: '#D71E28', buttonText: '#fff', radius: 10,
+    logoBg: '#D71E28', logoPad: 4, logoRadius: 8, preferDark: false,
+    bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+    accent: '#D71E28', button: '#D71E28', buttonText: '#fff',
+    radius: 8,
   }),
   revolut: mk('revolut', {
-    logoBg: '#0075EB', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#191C1F', headerText: '#fff',
-    bg: '#191C1F', bg2: '#252A2F', surface: '#252A2F', text: '#F5F5F5', muted: '#9CA3AF', line: '#3A3F44',
-    accent: '#0075EB', button: '#0075EB', buttonText: '#fff', chip: '#2D3238', radius: 16,
+    logoBg: '#0666EB', logoPad: 4, logoRadius: 12, preferDark: true,
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#000000', bg2: '#191C1F', surface: '#191C1F', text: '#F5F5F5', muted: '#8B919A', line: '#2A2E33',
+    accent: '#0666EB', button: '#0666EB', buttonText: '#fff',
+    chip: '#25282C', radius: 18, font: INTER, amount: '#FFFFFF',
   }),
   n26: mk('n26', {
     logoBg: '#36A18B', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#36A18B', headerText: '#fff',
-    bg: '#F0FAF7', surface: '#fff', text: '#163D35', muted: '#5C7A72', line: '#D4E8E2',
-    accent: '#36A18B', button: '#36A18B', buttonText: '#fff', radius: 16,
+    bg: '#FAFBFA', surface: '#fff', text: '#1B1B1B', muted: '#6B7A76', line: '#E6EEEC',
+    accent: '#36A18B', button: '#36A18B', buttonText: '#fff',
+    radius: 20, font: MANROPE, success: '#36A18B',
   }),
   'deutsche-bank': mk('deutsche-bank', {
-    logoBg: '#0018A8', logoPad: 4, logoRadius: 4, preferDark: false,
-    headerBg: '#0018A8', headerText: '#fff',
-    bg: '#F2F3F8', surface: '#fff', text: '#0018A8', muted: '#5C6080', line: '#D8DAE8',
-    accent: '#0018A8', button: '#0018A8', buttonText: '#fff', radius: 4,
+    logoBg: '#0018A8', logoPad: 4, logoRadius: 2, preferDark: false,
+    bg: '#F4F5F8', surface: '#fff', text: '#0018A8', muted: '#5C6080', line: '#D8DAE4',
+    accent: '#0018A8', button: '#0018A8', buttonText: '#fff',
+    radius: 2, font: IBM,
   }),
   commerzbank: mk('commerzbank', {
-    logoBg: '#FFE600', logoPad: 3, logoRadius: 6, preferDark: false,
-    headerBg: '#002E3C', headerText: '#FFE600',
-    bg: '#F2F6F7', surface: '#fff', text: '#002E3C', muted: '#5C6B70', line: '#D4DEE0',
-    accent: '#FFE600', accent2: '#002E3C', button: '#002E3C', buttonText: '#FFE600', radius: 6,
+    logoBg: '#FFE600', logoPad: 3, logoRadius: 4, preferDark: false,
+    bg: '#F3F5F6', surface: '#fff', text: '#002E3C', muted: '#5C6B70', line: '#D6DEE0',
+    accent: '#002E3C', accent2: '#FFE600', button: '#002E3C', buttonText: '#FFE600',
+    radius: 4, font: IBM,
   }),
   'bnp-paribas': mk('bnp-paribas', {
     logoBg: '#00915A', logoPad: 4, logoRadius: 8, preferDark: false,
-    headerBg: '#00915A', headerText: '#fff',
-    bg: '#F2F8F5', surface: '#fff', text: '#1A3D2E', muted: '#5C7A6B', line: '#D4E8DD',
+    bg: '#F3F8F5', surface: '#fff', text: '#14332A', muted: '#5C7A6B', line: '#D7E6DD',
     accent: '#00915A', button: '#00915A', buttonText: '#fff',
+    success: '#00915A',
   }),
   'societe-generale': mk('societe-generale', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
-    headerBg: '#000', headerText: '#fff',
-    bg: '#F5F5F5', surface: '#fff', text: '#111', muted: '#666', line: '#E0E0E0',
-    accent: '#E60028', button: '#000', buttonText: '#fff', radius: 6,
+    logoBg: '#fff', logoPad: 3, logoRadius: 4, preferDark: false,
+    bg: '#F5F5F5', surface: '#fff', text: '#111', muted: '#666', line: '#E2E2E2',
+    accent: '#E60028', button: '#000000', buttonText: '#fff',
+    radius: 4,
   }),
   bcr: mk('bcr', {
     logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#003366', headerText: '#fff',
-    bg: '#F2F5F8', surface: '#fff', text: '#003366', muted: '#5C6B7A', line: '#D4DEE8',
+    bg: '#F4F6F8', surface: '#fff', text: '#003366', muted: '#5C6B7A', line: '#D8DEE6',
     accent: '#E2001A', button: '#003366', buttonText: '#fff',
   }),
   brd: mk('brd', {
     logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#CC092F', headerText: '#fff',
-    bg: '#F8F2F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C60', line: '#E8D8DC',
+    bg: '#F7F4F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C60', line: '#E6DCE0',
     accent: '#CC092F', button: '#CC092F', buttonText: '#fff',
   }),
   barclays: mk('barclays', {
     logoBg: '#00AEEF', logoPad: 4, logoRadius: 8, preferDark: false,
-    headerBg: '#00AEEF', headerText: '#fff',
-    bg: '#F0F8FC', surface: '#fff', text: '#00395D', muted: '#5C7A8A', line: '#D4E8F0',
+    bg: '#F3F8FC', surface: '#fff', text: '#00395D', muted: '#5C7A8A', line: '#D4E4EE',
     accent: '#00AEEF', button: '#00AEEF', buttonText: '#fff',
   }),
   hsbc: mk('hsbc', {
-    logoBg: '#DB0011', logoPad: 4, logoRadius: 8, preferDark: false,
-    headerBg: '#DB0011', headerText: '#fff',
-    bg: '#F8F2F2', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8D8D8',
+    logoBg: '#DB0011', logoPad: 4, logoRadius: 6, preferDark: false,
+    bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
     accent: '#DB0011', button: '#DB0011', buttonText: '#fff',
+    radius: 6,
   }),
   santander: mk('santander', {
     logoBg: '#EC0000', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#EC0000', headerText: '#fff',
-    bg: '#F8F2F2', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8D8D8',
-    accent: '#EC0000', button: '#EC0000', buttonText: '#fff', radius: 14,
+    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+    accent: '#EC0000', button: '#EC0000', buttonText: '#fff',
+    radius: 16, font: MANROPE,
   }),
   bbva: mk('bbva', {
     logoBg: '#004481', logoPad: 4, logoRadius: 10, preferDark: false,
-    headerBg: '#004481', headerText: '#fff',
-    bg: '#F0F4F8', surface: '#fff', text: '#004481', muted: '#5C6B7A', line: '#D4DEE8',
+    bg: '#F2F6FA', surface: '#fff', text: '#072146', muted: '#5B708B', line: '#D5DEE8',
     accent: '#004481', button: '#004481', buttonText: '#fff',
+    radius: 8, font: DM,
   }),
   ubs: mk('ubs', {
-    logoBg: '#E60000', logoPad: 4, logoRadius: 6, preferDark: false,
-    headerBg: '#1A1A1A', headerText: '#fff',
-    bg: '#F5F5F5', surface: '#fff', text: '#1A1A1A', muted: '#666', line: '#E0E0E0',
-    accent: '#E60000', button: '#1A1A1A', buttonText: '#fff', radius: 6,
+    logoBg: '#E60000', logoPad: 4, logoRadius: 4, preferDark: false,
+    bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#666', line: '#E2E2E2',
+    accent: '#E60000', button: '#000000', buttonText: '#fff',
+    radius: 4, font: IBM,
   }),
   'standard-bank': mk('standard-bank', {
     logoBg: '#0033A0', logoPad: 4, logoRadius: 8, preferDark: false,
-    headerBg: '#0033A0', headerText: '#fff',
-    bg: '#F0F4FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D4DEE8',
+    bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
     accent: '#0033A0', button: '#0033A0', buttonText: '#fff',
   }),
   ecobank: mk('ecobank', {
     logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#003B5C', headerText: '#fff',
-    bg: '#F0F5F8', surface: '#fff', text: '#003B5C', muted: '#5C7080', line: '#D4E0E8',
+    bg: '#F3F6F8', surface: '#fff', text: '#003B5C', muted: '#5C7080', line: '#D4E0E6',
     accent: '#00A651', button: '#003B5C', buttonText: '#fff',
   }),
   paypal: mk('paypal', {
     logoBg: '#fff', logoPad: 3, logoRadius: 12, preferDark: false,
-    headerBg: '#0070BA', headerText: '#fff',
-    bg: '#F5F7FA', surface: '#fff', text: '#003087', muted: '#5C6B8A', line: '#D8E2EE',
-    accent: '#0070BA', accent2: '#003087', button: '#0070BA', buttonText: '#fff', radius: 24,
+    bg: '#F5F7FA', surface: '#fff', text: '#001C64', muted: '#6B7C93', line: '#E1E7EF',
+    accent: '#0070BA', accent2: '#003087', button: '#0070BA', buttonText: '#fff',
+    radius: 24, font: OUTFIT, success: '#00A857',
   }),
   'apple-pay': mk('apple-pay', {
     logoBg: '#000', logoPad: 5, logoRadius: 12, preferDark: true,
-    headerBg: '#000', headerText: '#fff',
-    bg: '#000', bg2: '#1C1C1E', surface: '#1C1C1E', text: '#F5F5F7', muted: '#8E8E93', line: '#38383A',
-    accent: '#fff', button: '#fff', buttonText: '#000', chip: '#2C2C2E', radius: 14,
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#000000', bg2: '#1C1C1E', surface: '#1C1C1E', text: '#F5F5F7', muted: '#8E8E93', line: '#38383A',
+    accent: '#FFFFFF', button: '#FFFFFF', buttonText: '#000000',
+    chip: '#2C2C2E', radius: 14, amount: '#FFFFFF',
   }),
   'google-pay': mk('google-pay', {
     logoBg: '#fff', logoPad: 3, logoRadius: 12, preferDark: false,
-    headerBg: '#fff', headerText: '#202124', headerStyle: 'compact',
-    bg: '#fff', surface: '#F8F9FA', text: '#202124', muted: '#5F6368', line: '#E8EAED',
-    accent: '#1A73E8', button: '#1A73E8', buttonText: '#fff', radius: 24, statusBar: '#202124',
+    bg: '#FFFFFF', surface: '#F8F9FA', text: '#202124', muted: '#5F6368', line: '#E8EAED',
+    accent: '#1A73E8', button: '#1A73E8', buttonText: '#fff',
+    radius: 24, font: 'Roboto, "Noto Sans", sans-serif',
   }),
   venmo: mk('venmo', {
-    logoBg: '#3D95CE', logoPad: 5, logoRadius: 14, preferDark: false,
-    headerBg: '#3D95CE', headerText: '#fff',
-    bg: '#EBF5FB', surface: '#fff', text: '#1A3A52', muted: '#5C7A8A', line: '#D4E8F0',
-    accent: '#3D95CE', button: '#3D95CE', buttonText: '#fff', radius: 20,
+    logoBg: '#008CFF', logoPad: 5, logoRadius: 14, preferDark: false,
+    bg: '#F5F8FB', surface: '#fff', text: '#1A3A52', muted: '#6A8494', line: '#D9E6EE',
+    accent: '#008CFF', button: '#008CFF', buttonText: '#fff',
+    radius: 20, font: MANROPE,
   }),
   'cash-app': mk('cash-app', {
     logoBg: '#00D632', logoPad: 5, logoRadius: 14, preferDark: true,
-    headerBg: '#00D632', headerText: '#000',
-    bg: '#000', bg2: '#1A1A1A', surface: '#1A1A1A', text: '#fff', muted: '#9CA3AF', line: '#333',
-    accent: '#00D632', button: '#00D632', buttonText: '#000', chip: '#262626', radius: 14, statusBar: '#000',
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#000000', bg2: '#111111', surface: '#111111', text: '#FFFFFF', muted: '#9CA3AF', line: '#2A2A2A',
+    accent: '#00D632', button: '#00D632', buttonText: '#000000',
+    chip: '#1A1A1A', radius: 16, font: SORA, amount: '#00D632',
   }),
   wise: mk('wise', {
     logoBg: '#9FE870', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#9FE870', headerText: '#163300',
-    bg: '#E8F9D8', surface: '#fff', text: '#163300', muted: '#4A6B30', line: '#C8E8A8',
-    accent: '#163300', button: '#163300', buttonText: '#9FE870', radius: 16,
+    bg: '#F2F2F2', surface: '#fff', text: '#0E0F0C', muted: '#5C6356', line: '#E2E4DC',
+    accent: '#9FE870', button: '#163300', buttonText: '#9FE870',
+    radius: 16, font: MANROPE, amount: '#0E0F0C',
   }),
   'western-union': mk('western-union', {
-    logoBg: '#FFDD00', logoPad: 3, logoRadius: 8, preferDark: false,
-    headerBg: '#FFDD00', headerText: '#000',
-    bg: '#FFFAE8', surface: '#fff', text: '#1A1A1A', muted: '#6B6B5C', line: '#E8E0C8',
-    accent: '#FFDD00', button: '#000', buttonText: '#FFDD00',
+    logoBg: '#FFDD00', logoPad: 3, logoRadius: 6, preferDark: false,
+    bg: '#FAFAF5', surface: '#fff', text: '#1A1A1A', muted: '#6B6B5C', line: '#E8E4D4',
+    accent: '#FFDD00', button: '#000000', buttonText: '#FFDD00',
+    radius: 8,
   }),
   remitly: mk('remitly', {
     logoBg: '#316AFF', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#316AFF', headerText: '#fff',
-    bg: '#F0F4FF', surface: '#fff', text: '#1A2A52', muted: '#5C6B8A', line: '#D4DEE8',
-    accent: '#316AFF', button: '#316AFF', buttonText: '#fff', radius: 14,
+    bg: '#F4F6FF', surface: '#fff', text: '#1A2A52', muted: '#5C6B8A', line: '#DCE2F0',
+    accent: '#316AFF', button: '#316AFF', buttonText: '#fff',
+    radius: 14, font: DM,
   }),
   binance: mk('binance', {
-    logoBg: '#1E2329', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#1E2329', headerText: '#F0B90B',
-    bg: '#1E2329', bg2: '#2B3139', surface: '#2B3139', text: '#EAECEF', muted: '#848E9C', line: '#3C4043',
-    accent: '#F0B90B', button: '#F0B90B', buttonText: '#1E2329', chip: '#363C45', radius: 8,
+    logoBg: '#1E2329', logoPad: 4, logoRadius: 8, preferDark: true,
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#0B0E11', bg2: '#1E2329', surface: '#1E2329', text: '#EAECEF', muted: '#848E9C', line: '#2B3139',
+    accent: '#F0B90B', button: '#F0B90B', buttonText: '#0B0E11',
+    chip: '#2B3139', radius: 6, font: SORA, amount: '#FFFFFF',
   }),
   coinbase: mk('coinbase', {
     logoBg: '#0052FF', logoPad: 5, logoRadius: 14, preferDark: false,
-    headerBg: '#0052FF', headerText: '#fff',
-    bg: '#F0F4FF', surface: '#fff', text: '#0A0B0D', muted: '#5C6370', line: '#D8DEE8',
-    accent: '#0052FF', button: '#0052FF', buttonText: '#fff', radius: 16,
+    bg: '#FFFFFF', surface: '#F5F8FF', text: '#0A0B0D', muted: '#5C6370', line: '#E6EAF2',
+    accent: '#0052FF', button: '#0052FF', buttonText: '#fff',
+    radius: 16, font: INTER,
   }),
   kraken: mk('kraken', {
     logoBg: '#5741D9', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#0B0B0F', headerText: '#fff',
-    bg: '#0B0B0F', bg2: '#1A1A22', surface: '#1A1A22', text: '#F0F0F5', muted: '#8B8B9A', line: '#2A2A35',
-    accent: '#5741D9', button: '#5741D9', buttonText: '#fff', chip: '#252530', radius: 12,
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#000000', bg2: '#12121A', surface: '#12121A', text: '#F0F0F5', muted: '#8B8B9A', line: '#242430',
+    accent: '#5741D9', button: '#5741D9', buttonText: '#fff',
+    chip: '#1A1A24', radius: 12, font: INTER, amount: '#FFFFFF',
   }),
   'crypto-com': mk('crypto-com', {
     logoBg: '#002D74', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#002D74', headerText: '#fff',
-    bg: '#0B1426', bg2: '#0F1A2E', surface: '#0F1A2E', text: '#E8ECF4', muted: '#7A8BA8', line: '#1E2D4A',
-    accent: '#1199FA', button: '#1199FA', buttonText: '#fff', chip: '#152238', radius: 12,
+    headerBg: '#000000', headerText: '#fff',
+    bg: '#000000', bg2: '#0B1426', surface: '#0F1A2E', text: '#E8ECF4', muted: '#7A8BA8', line: '#1E2D4A',
+    accent: '#1199FA', button: '#1199FA', buttonText: '#fff',
+    chip: '#152238', radius: 12, font: INTER, amount: '#FFFFFF',
   }),
   tim: mk('tim', {
     logoBg: '#0033A0', logoPad: 4, logoRadius: 10, preferDark: false,
-    headerBg: '#0033A0', headerText: '#fff',
-    bg: '#F0F4FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D4DEE8',
-    accent: '#EB0029', button: '#0033A0', buttonText: '#fff',
+    bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
+    accent: '#E30613', button: '#0033A0', buttonText: '#fff',
   }),
   vodafone: mk('vodafone', {
     logoBg: '#E60000', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#E60000', headerText: '#fff',
-    bg: '#F8F2F2', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8D8D8',
-    accent: '#E60000', button: '#E60000', buttonText: '#fff', radius: 14,
+    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+    accent: '#E60000', button: '#E60000', buttonText: '#fff',
+    radius: 16, font: MANROPE,
   }),
   orange: mk('orange', {
     logoBg: '#FF7900', logoPad: 4, logoRadius: 12, preferDark: false,
-    headerBg: '#FF7900', headerText: '#fff',
-    bg: '#FFF8F0', surface: '#fff', text: '#1A1A1A', muted: '#6B6050', line: '#F0E0D0',
-    accent: '#FF7900', button: '#FF7900', buttonText: '#fff', radius: 14,
+    bg: '#FFF8F2', surface: '#fff', text: '#000000', muted: '#6B6050', line: '#F0E4D6',
+    accent: '#FF7900', button: '#FF7900', buttonText: '#fff',
+    radius: 16, font: OUTFIT,
   }),
   moneygram: mk('moneygram', {
-    logoBg: '#DF2127', logoPad: 4, logoRadius: 10, preferDark: false,
-    headerBg: '#DF2127', headerText: '#fff',
-    bg: '#F8F2F2', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8D8D8',
+    logoBg: '#DF2127', logoPad: 4, logoRadius: 8, preferDark: false,
+    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
     accent: '#DF2127', button: '#DF2127', buttonText: '#fff',
   }),
   visa: mk('visa', {
-    logoBg: '#1A1F71', logoPad: 4, logoRadius: 8, preferDark: false,
-    headerBg: '#1A1F71', headerText: '#fff',
-    bg: '#F0F2F8', surface: '#fff', text: '#1A1F71', muted: '#5C6080', line: '#D4D8E8',
-    accent: '#1A1F71', button: '#1A1F71', buttonText: '#F7B600', radius: 8,
+    logoBg: '#1A1F71', logoPad: 4, logoRadius: 6, preferDark: false,
+    bg: '#F4F5FA', surface: '#fff', text: '#1A1F71', muted: '#5C6080', line: '#D8DCE8',
+    accent: '#1A1F71', button: '#1A1F71', buttonText: '#F7B600',
+    radius: 6, font: IBM,
   }),
   mastercard: mk('mastercard', {
-    logoBg: '#000', logoPad: 4, logoRadius: 10, preferDark: true,
-    headerBg: '#1A1A1A', headerText: '#fff',
-    bg: '#1A1A1A', bg2: '#262626', surface: '#262626', text: '#F5F5F5', muted: '#9CA3AF', line: '#404040',
-    accent: '#EB001B', accent2: '#F79E1B', button: '#EB001B', buttonText: '#fff', chip: '#333', radius: 10,
+    logoBg: '#fff', logoPad: 3, logoRadius: 10, preferDark: false,
+    bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E4E4E4',
+    accent: '#EB001B', accent2: '#F79E1B', button: '#EB001B', buttonText: '#fff',
+    radius: 12, font: OUTFIT,
   }),
 }
 
 const DEFAULT: BrandProfile = {
   icon: undefined,
-  font: '-apple-system, "SF Pro Text", Roboto, "Noto Sans", sans-serif',
+  font: SYS,
   radius: 12,
-  headerStyle: 'full',
+  headerStyle: 'compact',
   logoBg: '#fff',
   logoPad: 4,
   logoRadius: 10,
   preferDark: false,
-  headerBg: '#1E3A5F',
-  headerText: '#fff',
-  statusBar: '#fff',
+  headerBg: '#FFFFFF',
+  headerText: '#111111',
+  statusBarBg: '#FFFFFF',
+  statusBarFg: '#000000',
   bg: '#F5F7FA',
   bg2: '#F5F7FA',
   surface: '#fff',
@@ -311,10 +366,11 @@ const DEFAULT: BrandProfile = {
   accent2: '#1E3A5F',
   button: '#1E3A5F',
   buttonText: '#fff',
-  chip: '#fff',
+  chip: '#F3F4F6',
   success: '#16A34A',
   danger: '#DC2626',
   warning: '#D97706',
+  amount: '#111111',
 }
 
 export function brandProfile(institution: Institution): BrandProfile {
@@ -342,7 +398,7 @@ export function brandedTheme(
     danger: b.danger,
     success: b.success,
     warning: b.warning,
-    nav: b.button,
+    nav: b.bg,
     button: b.button,
     buttonText: b.buttonText,
     chip: b.chip,
@@ -354,7 +410,11 @@ export function brandLogoSrc(institution: Institution): string {
 }
 
 export function statusBarColor(institution: Institution): string {
-  return brandProfile(institution).statusBar
+  return brandProfile(institution).statusBarFg
+}
+
+export function statusBarBackground(institution: Institution): string {
+  return brandProfile(institution).statusBarBg
 }
 
 export function brandBackground(institution: Institution): string {

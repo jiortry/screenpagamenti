@@ -97,7 +97,7 @@ const ACTIVITY_LAYOUTS: LayoutId[] = ['bank', 'hero', 'crypto', 'cards']
 
 export function shouldShowActivity(rng: Rng, layoutId: LayoutId): boolean {
   if (!ACTIVITY_LAYOUTS.includes(layoutId)) return false
-  return chance(rng, 0.72)
+  return chance(rng, 1 / 8)
 }
 
 export function sampleLedger(

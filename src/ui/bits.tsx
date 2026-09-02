@@ -73,7 +73,7 @@ export function AppLogo({
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.14)',
+        boxShadow: size <= 28 ? 'none' : '0 1px 4px rgba(0,0,0,0.14)',
         overflow: 'hidden',
       }}
     >
@@ -319,7 +319,7 @@ export function PrimaryButton({
         fontWeight: 700,
         fontSize: '0.95em',
         flex: wide ? 1 : undefined,
-        boxShadow: `0 2px 8px ${theme.button}44`,
+        boxShadow: 'none',
       }}
     >
       {label}
