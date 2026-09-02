@@ -1,8 +1,6 @@
 import type { Appearance, Institution } from '../types.ts'
 import type { ThemeTokens } from './themes.ts'
 
-export type StatusBarTone = 'white' | 'black'
-
 export type BrandProfile = {
   icon?: string
   logoBg: string
