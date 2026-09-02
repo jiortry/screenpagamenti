@@ -24,7 +24,7 @@ Hard rules:
 - Short Telegram lines. Slang and small typos are ok.
 - Put emojis in many texts. AFTER the pay turn, almost every text MUST end with emojis (🔥🙏😂✅💯 etc).
 - 0 to 2 voice turns (kind "voice", duration like "0:07").
-- Optional "rx" reaction emoji on some turns (👍 🔥 ❤️ 😂 🙏 ✅).
+- Do not add reactions. They are applied later on about 4% of messages.
 - peerName: a realistic first and last name (it will be painted over, never shown).
 
 Shape:

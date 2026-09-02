@@ -49,8 +49,9 @@ export function assembleReviewChat(
   const banned = [...new Set([name, ...parts])].filter((p) => p.length > 1)
 
   const allowVoice = chance(rng, 0.42)
-  const allowReactions = chance(rng, 0.48)
-  const allowPayPhoto = Boolean(opts.paymentPng)
+  const extraRx = ['👍', '🔥', '❤️', '😂', '🙏', '✅'] as const
+  const rollRx = () =>
+    chance(rng, 0.04) ? [{ emoji: pick(rng, extraRx), count: 1 }] : undefined
 
   const peerId = `p-${seed.toString(16)}`
   const peer = {
@@ -70,9 +71,9 @@ export function assembleReviewChat(
     { id: 'd0', from: 'peer', kind: 'date', text: ui.today },
   ]
 
+  const allowPayPhoto = Boolean(opts.paymentPng)
   let afterPay = false
   let payUsed = false
-  const extraRx = ['👍', '🔥', '❤️', '😂', '🙏', '✅']
 
   for (let i = 0; i < opts.script.turns.length; i++) {
     const turn = opts.script.turns[i]!
@@ -94,10 +95,7 @@ export function assembleReviewChat(
         status,
         photo: opts.paymentPng,
         photoAspect: 'screen',
-        reactions:
-          allowReactions && chance(rng, 0.55)
-            ? [{ emoji: pick(rng, extraRx), count: 1 }]
-            : undefined,
+        reactions: rollRx(),
       })
       continue
     }
@@ -114,7 +112,7 @@ export function assembleReviewChat(
         voiceDuration: turn.duration ?? `0:0${randInt(rng, 4, 9)}`,
         voiceProgress: from === 'me' ? 0 : chance(rng, 0.4) ? 1 : rng() * 0.5,
         waveform: waveform(rng),
-        reactions: allowReactions && turn.rx ? [{ emoji: turn.rx, count: 1 }] : undefined,
+        reactions: rollRx(),
       })
       continue
     }
@@ -124,11 +122,6 @@ export function assembleReviewChat(
     if (afterPay) text = ensureEmoji(text, rng)
     else if (chance(rng, 0.38)) text = ensureEmoji(text, rng)
 
-    const rx =
-      allowReactions && (turn.rx || (afterPay && chance(rng, 0.62)))
-        ? [{ emoji: turn.rx || pick(rng, extraRx), count: 1 }]
-        : undefined
-
     messages.push({
       id: `t-${i}`,
       from,
@@ -137,7 +130,7 @@ export function assembleReviewChat(
       text,
       time,
       status,
-      reactions: rx,
+      reactions: rollRx(),
     })
   }
 
@@ -152,6 +145,7 @@ export function assembleReviewChat(
       status: 'read',
       photo: opts.paymentPng,
       photoAspect: 'screen',
+      reactions: rollRx(),
     })
   }
 

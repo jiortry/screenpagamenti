@@ -13,6 +13,7 @@ import { createScenario } from '../../engine/scenario.ts'
 import type { RateBook, RateError, Scenario } from '../../types.ts'
 import { ModeNav, type StudioMode } from '../ModeNav.tsx'
 import { PaymentScreen } from '../PaymentScreen.tsx'
+import { clearPaymentRedactions, paintPaymentRedactions } from './BrushRedact.tsx'
 import { TelegramScreen } from './TelegramScreen.tsx'
 
 type Saved = { scenario: ChatScenario; png: string; skinId: TgSkinId; wallId: TgWallId }
@@ -90,10 +91,23 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
       setPayScenario(s)
       await document.fonts.ready
       await waitFrames()
-      await new Promise((r) => window.setTimeout(r, 100))
+      await new Promise((r) => window.setTimeout(r, 140))
       const el = payRef.current
       if (!el) continue
       try {
+        const imgs = [...el.querySelectorAll('img')]
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((res) => {
+                  img.addEventListener('load', () => res(), { once: true })
+                  img.addEventListener('error', () => res(), { once: true })
+                }),
+          ),
+        )
+        paintPaymentRedactions(el, s, seed ^ 0xc0ff)
+        await waitFrames()
         const raw = await withTimeout(
           toPng(el, {
             pixelRatio: 2,
@@ -103,8 +117,11 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
           8000,
           'pay capture timeout',
         )
+        clearPaymentRedactions(el)
+        if (!raw || raw.length < 80) continue
         return raw
       } catch {
+        clearPaymentRedactions(el)
         continue
       }
     }
@@ -139,8 +156,9 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
     setBusy(true)
     try {
       for (let i = 0; i < count; i++) {
-        setLog(`Payment screenshot ${i + 1}/${count}…`)
+        setLog(`Generating bank screenshot ${i + 1}/${count}…`)
         const payPng = await capturePay()
+        if (!payPng) throw new Error('Could not export a redacted payment PNG')
         setLog(`Gemini 2.5 Flash writing English chat ${i + 1}/${count}…`)
         const script = await generateReviewScript()
         const seed = (Math.random() * 0xffffffff) >>> 0
@@ -205,9 +223,9 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
         <p className="eyebrow">Chat + payments</p>
         <h1>Review chat</h1>
         <p className="lede">
-          Gemini 2.5 Flash writes an English Telegram review. One payment screenshot from this studio
-          is dropped in as the only photo. The contact name is painted over with a red editor brush.
-          Voice notes and reactions appear at random.
+          Gemini 2.5 Flash writes an English Telegram review. The bank screen is generated, painted
+          over with a red editor brush, exported to PNG, then dropped in as the only photo. Contact
+          names are redacted. Reactions show on about 4% of messages.
         </p>
 
         <div className={`rate-card ${blocked ? 'bad' : 'ok'}`}>
@@ -220,7 +238,7 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
           ) : (
             <>
               <strong>Gemini + live rates</strong>
-              <p>google/gemini-2.5-flash · English only · name redacted</p>
+              <p>google/gemini-2.5-flash · English only · redacted PNG</p>
             </>
           )}
         </div>
@@ -283,7 +301,7 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
         {view && (
           <dl className="meta">
             <div><dt>Mockup</dt><dd>{skinId}</dd></div>
-            <div><dt>Lang</dt><dd>English · name redacted</dd></div>
+            <div><dt>Lang</dt><dd>English · redacted</dd></div>
             <div><dt>Device</dt><dd>{view.device.label} {view.device.width}×{view.device.height}</dd></div>
             <div><dt>Chat</dt><dd>review DM</dd></div>
           </dl>
@@ -315,6 +333,7 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
           <div
             ref={payRef}
             style={{
+              position: 'relative',
               width: payScenario.device.width,
               height: payScenario.device.height,
               display: 'block',
