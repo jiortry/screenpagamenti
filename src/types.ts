@@ -231,6 +231,7 @@ export type Scenario = {
   institution: Institution
   sender: Person
   recipient: Person
+  direction: 'in' | 'out'
   amountEur: number
   feeEur: number
   totalEur: number

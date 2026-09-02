@@ -149,7 +149,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
   const ui = brand.ui
   const loc = s.locale
   const m = screenMetrics(s.device.width, s.device.height, s.visual.spacingScale, ui)
-  const bal = s.accountBalance ?? Math.round((s.amountEur * 2.4 + (s.seed % 1700) + 420) * 100) / 100
+  const bal = s.accountBalance
   const tint = statusTint(s.status, theme)
   const status = s.showStatusBadge ? (
     <span
@@ -247,7 +247,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
         >
           {s.institution.name}
         </div>
-        {withBalance && s.visual.showBalance && (
+        {withBalance && s.visual.showBalance && bal != null && (
           <div style={{ color: theme.muted, fontSize: '0.72em', fontWeight: 500 }}>
             {t(loc, 'available')} {formatLocal(s, bal)}
           </div>
@@ -275,12 +275,26 @@ function heroGap(ui: MockupSkin) {
   return ui.density === 'air' ? 10 : ui.density === 'tight' ? 0 : 4
 }
 
+function counterparty(s: Scenario) {
+  return s.direction === 'in' ? s.sender : s.recipient
+}
+
+function signedLocal(s: Scenario, amountEur: number): string {
+  const n = formatLocal(s, amountEur)
+  return s.direction === 'in' ? `+${n}` : n
+}
+
+function signedQuote(s: Scenario, amount: number, quote: Scenario['conversion']['quote_currency']): string {
+  const n = formatQuote(amount, quote, s.bcp47)
+  return s.direction === 'in' ? `+${n}` : n
+}
+
 function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolean }) {
   const { theme, brand, ui, m, loc } = skinOf(s)
   const c = s.conversion
   const primary = primaryCrypto && isCryptoQuote(c.quote_currency)
-    ? formatQuote(c.converted_amount, c.quote_currency, s.bcp47)
-    : formatLocal(s, s.amountEur)
+    ? signedQuote(s, c.converted_amount, c.quote_currency)
+    : signedLocal(s, s.amountEur)
   const secondary = primaryCrypto && isCryptoQuote(c.quote_currency)
     ? formatLocal(s, s.amountEur)
     : c.quote_currency !== 'EUR' && c.quote_currency !== s.displayCurrency
@@ -358,7 +372,7 @@ function PersonMark({ s, letters, size = 52 }: { s: Scenario; letters: string; s
 function HeroLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
-  const person = s.recipient
+  const person = counterparty(s)
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'from'), s.sender.full])
   rows.push([t(loc, 'to'), s.recipient.full])
@@ -433,7 +447,7 @@ function CryptoLayout({ s }: { s: Scenario }) {
 function BankLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
-  const person = s.recipient
+  const person = counterparty(s)
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'sender'), s.sender.full])
   if (details === 'full') rows.push([t(loc, 'iban'), s.ibanFrom ?? '—', true])
@@ -486,8 +500,8 @@ function RemitLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
   const rows: Array<[string, string, boolean?]> = []
-  if (details !== 'min') rows.push([t(loc, 'youSent'), formatLocal(s, s.amountEur)])
-  rows.push([t(loc, 'youReceived'), formatQuote(s.conversion.converted_amount, s.conversion.quote_currency, s.bcp47)])
+  if (details !== 'min') rows.push([t(loc, 'from'), s.sender.full])
+  rows.push([t(loc, 'youReceived'), formatLocal(s, s.amountEur)])
   if (details === 'full') rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
   if (details !== 'min' && s.conversion.show_rate) rows.push([t(loc, 'rate'), s.conversion.display_rate])
   if (details === 'full' && !m.short) {

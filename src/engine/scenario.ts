@@ -15,7 +15,7 @@ import { sampleEurAmount, sampleFeeEur } from './amounts.ts'
 import { sampleDevice, sampleFontScale } from './devices.ts'
 import { pickupPoint, pickInstitution } from './institutions.ts'
 import { brandProfile } from './brands.ts'
-import { accountBalance, sampleLedger, shouldShowActivity } from './ledger.ts'
+import { sampleAccountBalance, sampleLedger, shouldShowActivity } from './ledger.ts'
 import {
   pickupCode,
   synthAccount,
@@ -53,9 +53,9 @@ const CATEGORIES: { value: PaymentCategory; weight: number }[] = [
 ]
 
 const STATUSES: { value: TxStatus; weight: number }[] = [
-  { value: 'completed', weight: 45 },
-  { value: 'sent', weight: 30 },
-  { value: 'confirmed', weight: 25 },
+  { value: 'received', weight: 50 },
+  { value: 'completed', weight: 28 },
+  { value: 'confirmed', weight: 22 },
 ]
 
 function cryptoOf(category: PaymentCategory): CryptoQuote | null {
@@ -216,6 +216,7 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     institution,
     sender,
     recipient,
+    direction: 'in',
     amountEur,
     feeEur,
     totalEur,
@@ -266,15 +267,13 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     scenario.cardTo = synthCardMask(rng)
   }
 
+  let ledger = scenario.recentActivity ?? []
   if (shouldShowActivity(rng, layoutId)) {
-    const ledger = sampleLedger(rng, locale.id, scenario.timestamp)
+    ledger = sampleLedger(rng, locale.id, scenario.timestamp)
     scenario.recentActivity = ledger
-    scenario.accountBalance = accountBalance(seed, amountEur, ledger, true)
-    scenario.visual.showBalance = true
-  } else if (chance(rng, 0.55)) {
-    scenario.accountBalance = accountBalance(seed, amountEur, [], true)
     scenario.visual.showBalance = true
   }
+  scenario.accountBalance = sampleAccountBalance(rng, amountEur, ledger)
 
   return scenario
 }

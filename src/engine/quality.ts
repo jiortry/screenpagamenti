@@ -1,6 +1,7 @@
 import type { RateBook, Scenario } from '../types.ts'
 import { CANCEL_REASONS, CATALOG, FAIL_REASONS, NOTES } from '../i18n/catalog.ts'
 import { mathMatches } from './math.ts'
+import { walletFarFromTx } from './ledger.ts'
 import { LOCALES, RTL_LOCALES } from './languages.ts'
 
 export type QcIssue = { code: string; detail: string }
@@ -50,11 +51,17 @@ export function qcScenario(s: Scenario, rates: RateBook): QcResult {
     }
   }
 
-  if (s.status !== 'completed' && s.status !== 'sent' && s.status !== 'confirmed') {
-    issues.push({ code: 'status', detail: `Non-terminal outgoing status: ${s.status}` })
+  if (s.status !== 'received' && s.status !== 'completed' && s.status !== 'confirmed') {
+    issues.push({ code: 'status', detail: `Not a received-payment status: ${s.status}` })
   }
-  if (s.recentActivity?.some((e) => e.direction === 'in')) {
-    issues.push({ code: 'direction', detail: 'Recent activity must be outgoing only' })
+  if (s.direction !== 'in') {
+    issues.push({ code: 'direction', detail: 'Main payment must be incoming / received' })
+  }
+  if (s.accountBalance == null || !walletFarFromTx(s.accountBalance, s.amountEur)) {
+    issues.push({
+      code: 'balance',
+      detail: `Wallet ${s.accountBalance} too close to tx ${s.amountEur}`,
+    })
   }
   const localeMeta = LOCALES.find((l) => l.id === s.locale)
   if (localeMeta && s.displayCurrency !== localeMeta.currency) {

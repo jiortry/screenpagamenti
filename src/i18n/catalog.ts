@@ -1916,18 +1916,18 @@ export function statusKey(status: string): MsgKey {
 }
 
 export function titleKey(status: string): MsgKey {
+  if (status === 'received' || status === 'completed' || status === 'confirmed') {
+    return 'titleReceived'
+  }
   const map: Record<string, MsgKey> = {
-    completed: 'titleCompleted',
     processing: 'titleProcessing',
     pending: 'titlePending',
     scheduled: 'titleScheduled',
-    confirmed: 'titleConfirmed',
-    received: 'titleReceived',
     sent: 'titleSent',
     failed: 'titleFailed',
     cancelled: 'titleCancelled',
   }
-  return map[status] ?? 'titleCompleted'
+  return map[status] ?? 'titleReceived'
 }
 
 export function methodKey(category: string): MsgKey {

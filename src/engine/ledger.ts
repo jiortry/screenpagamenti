@@ -159,7 +159,8 @@ export function sampleLedger(rng: Rng, locale: LocaleId, mainTimestamp: string):
   const used = new Set<string>()
 
   for (let i = 0; i < count; i++) {
-    const labels = pool.out
+    const incoming = chance(rng, 0.32) && pool.in.length > 0
+    const labels = incoming ? pool.in : pool.out
     let label = pick(rng, labels)
     let guard = 0
     while (used.has(label) && guard++ < 8) label = pick(rng, labels)
@@ -171,9 +172,9 @@ export function sampleLedger(rng: Rng, locale: LocaleId, mainTimestamp: string):
 
     entries.push({
       id: `L${randInt(rng, 10000, 99999)}`,
-      direction: 'out',
+      direction: incoming ? 'in' : 'out',
       label,
-      amountEur: sampleMerchantAmount(rng, label),
+      amountEur: incoming ? euros(rng, 28, 420) : sampleMerchantAmount(rng, label),
       timestamp: ts.toISOString(),
       icon: merchantIcon(label),
     })
@@ -182,14 +183,38 @@ export function sampleLedger(rng: Rng, locale: LocaleId, mainTimestamp: string):
   return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 }
 
-export function accountBalance(
-  seed: number,
-  amountEur: number,
-  ledger: LedgerEntry[],
-  mainOutgoing: boolean,
-): number {
-  let bal = 1200 + (seed % 4800) + ledger.reduce((s, e) => s + (e.direction === 'in' ? e.amountEur : -e.amountEur), 0)
-  if (mainOutgoing) bal += amountEur
-  else bal -= amountEur
+export function walletFarFromTx(balanceEur: number, amountEur: number): boolean {
+  if (!(balanceEur > 0) || !(amountEur > 0)) return false
+  if (balanceEur <= amountEur) return false
+  const gap = balanceEur - amountEur
+  const minGap = Math.max(500, amountEur * 0.55)
+  return gap >= minGap - 0.011
+}
+
+function sampleLeftover(rng: Rng): number {
+  const band = pickWeighted(rng, [
+    { min: 560, max: 1480, weight: 20 },
+    { min: 1480, max: 4200, weight: 38 },
+    { min: 4200, max: 9800, weight: 28 },
+    { min: 9800, max: 26800, weight: 14 },
+  ])
+  const raw = randFloat(rng, band.min, band.max)
+  const cents = randInt(rng, 1, 99)
+  return Math.round((Math.floor(raw) + cents / 100) * 100) / 100
+}
+
+export function sampleAccountBalance(rng: Rng, amountEur: number, ledger: LedgerEntry[]): number {
+  const minGap = Math.max(500, amountEur * 0.55)
+  let leftover = sampleLeftover(rng)
+  if (leftover < minGap) leftover = minGap + randFloat(rng, 90, 1400)
+
+  let bal =
+    leftover +
+    amountEur +
+    ledger.reduce((sum, e) => sum + (e.direction === 'in' ? e.amountEur : -e.amountEur), 0)
+
+  if (!walletFarFromTx(bal, amountEur)) {
+    bal = amountEur + minGap + randFloat(rng, 180, 3600)
+  }
   return Math.round(bal * 100) / 100
 }

@@ -3,7 +3,7 @@ import { brandProfile } from '../src/engine/brands.ts'
 import { formatLocal, fromEurAmount } from '../src/engine/format.ts'
 import { INSTITUTIONS } from '../src/engine/institutions.ts'
 import { LOCALES } from '../src/engine/languages.ts'
-import { sampleMerchantAmount } from '../src/engine/ledger.ts'
+import { sampleMerchantAmount, sampleAccountBalance, walletFarFromTx } from '../src/engine/ledger.ts'
 import { convertFromEur, mathMatches } from '../src/engine/math.ts'
 import { mulberry32 } from '../src/engine/random.ts'
 import { FALLBACK_FIAT_PER_EUR } from '../src/engine/rates.ts'
@@ -63,6 +63,15 @@ if (amounts.some((a) => a < 100 || a > 4320)) throw new Error('range')
   }
 }
 
+{
+  const balRng = mulberry32(11)
+  for (let i = 0; i < 250; i++) {
+    const amt = sampleEurAmount(balRng)
+    const bal = sampleAccountBalance(balRng, amt, [])
+    if (!walletFarFromTx(bal, amt)) throw new Error(`close wallet ${bal} tx ${amt}`)
+  }
+}
+
 for (const institution of INSTITUTIONS) {
   for (const appearance of ['light', 'dark'] as const) {
     const b = brandProfile(institution, appearance)
@@ -99,10 +108,14 @@ for (let i = 0; i < 200; i++) {
   appearances.add(s.appearance)
   statuses.add(s.status)
   if (!s.carrier) throw new Error('carrier')
-  if (s.status !== 'completed' && s.status !== 'sent' && s.status !== 'confirmed') {
+  if (s.direction !== 'in') throw new Error(`direction ${s.direction}`)
+  if (s.status !== 'received' && s.status !== 'completed' && s.status !== 'confirmed') {
     throw new Error(`status ${s.status}`)
   }
-  if (s.recentActivity?.some((e) => e.direction === 'in')) throw new Error('incoming ledger')
+  if (s.status === 'sent') throw new Error('sent status')
+  if (s.accountBalance == null || !walletFarFromTx(s.accountBalance, s.amountEur)) {
+    throw new Error(`wallet ${s.accountBalance} tx ${s.amountEur}`)
+  }
   const loc = LOCALES.find((l) => l.id === s.locale)
   if (!loc || s.displayCurrency !== loc.currency) {
     throw new Error(`currency ${s.locale} ${s.displayCurrency}`)
