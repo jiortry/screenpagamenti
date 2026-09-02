@@ -341,6 +341,58 @@ function actionBox(ui: MockupSkin): CSSProperties {
   }
 }
 
+function CtaControl({
+  label,
+  theme,
+  look,
+  wide,
+  radius,
+  compact,
+  size = 'md',
+}: {
+  label: string
+  theme: ThemeTokens
+  look: MockupSkin['ctaLook']
+  wide?: boolean
+  radius?: number
+  compact?: boolean
+  size?: MockupSkin['ctaSize']
+}) {
+  const fontSize = ctaType(size, compact)
+  const naked = look === 'text' || look === 'underline'
+  const style: CSSProperties = {
+    textAlign: 'center',
+    fontWeight: naked ? 650 : 700,
+    fontSize,
+    padding: naked ? (compact ? '8px 4px' : '10px 6px') : ctaPad(size, compact),
+    flex: wide ? 1 : undefined,
+    borderRadius: naked ? 0 : (radius ?? theme.radius + 4),
+    background: 'transparent',
+    boxShadow: 'none',
+    boxSizing: 'border-box',
+  }
+  if (look === 'text') {
+    style.color = theme.button
+    return <div style={style}>{label}</div>
+  }
+  if (look === 'underline') {
+    style.color = theme.button
+    style.textDecoration = 'underline'
+    style.textUnderlineOffset = 3
+    style.textDecorationThickness = 1.2
+    return <div style={style}>{label}</div>
+  }
+  if (look === 'outline') {
+    style.color = theme.button
+    style.border = `2px solid ${theme.button}`
+    return <div style={style}>{label}</div>
+  }
+  style.background = theme.button
+  style.color = theme.buttonText
+  style.border = 'none'
+  return <div style={style}>{label}</div>
+}
+
 export function PrimaryButton({
   label,
   theme,
@@ -357,21 +409,15 @@ export function PrimaryButton({
   size?: MockupSkin['ctaSize']
 }) {
   return (
-    <div
-      style={{
-        background: theme.button,
-        color: theme.buttonText,
-        borderRadius: radius ?? theme.radius + 4,
-        padding: ctaPad(size, compact),
-        textAlign: 'center',
-        fontWeight: 700,
-        fontSize: ctaType(size, compact),
-        flex: wide ? 1 : undefined,
-        boxShadow: 'none',
-      }}
-    >
-      {label}
-    </div>
+    <CtaControl
+      label={label}
+      theme={theme}
+      look="fill"
+      wide={wide}
+      radius={radius}
+      compact={compact}
+      size={size}
+    />
   )
 }
 
@@ -399,7 +445,7 @@ export function GhostButton({
         fontWeight: 650,
         fontSize: ctaType(size, compact),
         flex: 1,
-        background: theme.surface,
+        background: 'transparent',
       }}
     >
       {label}
@@ -440,6 +486,18 @@ export function Actions({
   const radius = ui.pill ? 999 : theme.radius
   const box = actionBox(ui)
   const size = ui.ctaSize
+  const label = ui.ctaLabel === 'back' ? t(s.locale, 'back') : done
+  const primary = (
+    <CtaControl
+      label={label}
+      theme={theme}
+      look={ui.ctaLook}
+      wide={ui.cta === 'split'}
+      radius={radius}
+      compact={compact}
+      size={size}
+    />
+  )
   const secondary =
     ui.ctaSecondary === 'none' || compact
       ? null
@@ -456,20 +514,16 @@ export function Actions({
         ) : (
           <GhostButton label={share} theme={theme} radius={radius} compact={compact} size={size} />
         )}
-        <PrimaryButton label={done} theme={theme} wide radius={radius} compact={compact} size={size} />
+        {primary}
       </div>
     )
   }
   if (ui.cta === 'one' || !secondary) {
-    return (
-      <div style={box}>
-        <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} size={size} />
-      </div>
-    )
+    return <div style={box}>{primary}</div>
   }
   return (
     <div style={{ ...box, display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
-      <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} size={size} />
+      {primary}
       {secondary}
     </div>
   )
