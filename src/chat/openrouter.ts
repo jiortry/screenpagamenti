@@ -19,7 +19,7 @@ Hard rules:
 - English only. No other languages.
 - NEVER put a person's name, surname, username, @handle, phone, IBAN, or email in message text. Say you / bro / dude / man.
 - 7 to 11 turns.
-- Exactly one turn must have kind "pay". That is where a payment-confirmation screenshot will be inserted. No other photos.
+- Exactly one turn must have kind "pay" and from "them". That screenshot is always sent by the other person (left, white bubble). No other photos.
 - kind is text | voice | pay.
 - Short Telegram lines. Slang and small typos are ok.
 - Do NOT put emojis in message text. Almost all lines are plain text.
@@ -28,7 +28,7 @@ Hard rules:
 - peerName: a realistic first and last name (it will be painted over, never shown).
 
 Shape:
-{"peerName":"Jason Miller","online":true,"turns":[{"from":"them","kind":"text","text":"did it land?"},{"from":"me","kind":"pay"},{"from":"them","kind":"text","text":"got it bro"}]}`
+{"peerName":"Jason Miller","online":true,"turns":[{"from":"them","kind":"text","text":"did it land?"},{"from":"them","kind":"pay"},{"from":"me","kind":"text","text":"got it bro"}]}`
 
 export async function generateReviewScript(): Promise<ReviewScript> {
   const res = await fetch('/openrouter/chat', {
@@ -69,12 +69,13 @@ function parseScript(content: string): ReviewScript {
   const turns = parsed.turns.filter((t) => t && (t.kind === 'text' || t.kind === 'voice' || t.kind === 'pay'))
   const payAt = turns.findIndex((t) => t.kind === 'pay')
   if (payAt < 0) {
-    turns.splice(Math.max(2, Math.floor(turns.length / 2)), 0, { from: 'me', kind: 'pay' })
+    turns.splice(Math.max(2, Math.floor(turns.length / 2)), 0, { from: 'them', kind: 'pay' })
   } else {
     let seen = false
     for (let i = 0; i < turns.length; i++) {
       if (turns[i]!.kind === 'pay') {
-        if (seen) turns[i] = { from: turns[i]!.from, kind: 'text', text: 'here 📸' }
+        if (seen) turns[i] = { from: turns[i]!.from, kind: 'text', text: 'here' }
+        else turns[i] = { ...turns[i]!, from: 'them', kind: 'pay' }
         seen = true
       }
     }

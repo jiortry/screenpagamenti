@@ -92,11 +92,10 @@ export function assembleReviewChat(
       payUsed = true
       messages.push({
         id: `pay-${i}`,
-        from,
-        peerId: from === 'peer' ? peerId : undefined,
+        from: 'peer',
+        peerId,
         kind: 'photo',
         time,
-        status,
         photo: opts.paymentPng,
         photoAspect: 'screen',
         reactions: rollRx(),
@@ -141,10 +140,10 @@ export function assembleReviewChat(
     const time = messages[insertAt]?.time ?? hhmm(ts, loc.bcp47, loc.clock24h)
     messages.splice(insertAt, 0, {
       id: 'pay-fallback',
-      from: 'me',
+      from: 'peer',
+      peerId,
       kind: 'photo',
       time,
-      status: 'read',
       photo: opts.paymentPng,
       photoAspect: 'screen',
       reactions: rollRx(),

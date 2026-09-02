@@ -66,7 +66,7 @@ function BrushSvg({
   height,
   seed,
   messy = false,
-  blend = 'multiply',
+  blend = 'normal',
 }: {
   width: number
   height: number
@@ -88,6 +88,9 @@ function BrushSvg({
         overflow: 'visible',
         pointerEvents: 'none',
         mixBlendMode: blend,
+        position: 'relative',
+        zIndex: 2147483647,
+        isolation: 'isolate',
       }}
     >
       {marks.map((s, i) =>
@@ -124,7 +127,7 @@ export function BrushRedact({
   height = 17,
   seed,
   messy = false,
-  blend = 'multiply',
+  blend = 'normal',
 }: {
   width: number
   height?: number
@@ -146,7 +149,7 @@ export function brushMarkup(width: number, height: number, seed: number): string
     }
     return `<path d="${s.d}" fill="none" stroke="${s.ink}" stroke-width="${s.width.toFixed(1)}" stroke-linecap="round" opacity="${s.opacity.toFixed(2)}" ${rot} />`
   })
-  return `<svg width="${w}" height="${h + 8}" viewBox="0 0 ${w} ${h + 8}" aria-hidden="true" style="display:block;overflow:visible;pointer-events:none">${parts.join('')}</svg>`
+  return `<svg width="${w}" height="${h + 8}" viewBox="0 0 ${w} ${h + 8}" aria-hidden="true" style="display:block;overflow:visible;pointer-events:none;position:relative;z-index:2147483647">${parts.join('')}</svg>`
 }
 
 export function RedactedName({
@@ -174,6 +177,9 @@ export function RedactedName({
         height: h,
         verticalAlign: 'middle',
         userSelect: 'none',
+        zIndex: 2147483647,
+        isolation: 'isolate',
+        overflow: 'visible',
       }}
       aria-label="redacted"
       title=""
@@ -193,12 +199,12 @@ export function RedactedName({
       >
         {name}
       </span>
-      <span style={{ position: 'absolute', left: ox - 4, top: oy - 3 }}>
-        <BrushRedact width={w + 10} height={h + 2} seed={seed} messy />
+      <span style={{ position: 'absolute', left: ox - 4, top: oy - 3, zIndex: 2147483647, pointerEvents: 'none' }}>
+        <BrushRedact width={w + 10} height={h + 2} seed={seed} messy blend="normal" />
       </span>
       {extra && (
-        <span style={{ position: 'absolute', left: ox + Math.round((rng() - 0.5) * 14), top: oy + Math.round((rng() - 0.5) * 5) }}>
-          <BrushRedact width={Math.round(w * (0.45 + rng() * 0.4))} height={h - 2} seed={seed ^ 0x51f} messy />
+        <span style={{ position: 'absolute', left: ox + Math.round((rng() - 0.5) * 14), top: oy + Math.round((rng() - 0.5) * 5), zIndex: 2147483647, pointerEvents: 'none' }}>
+          <BrushRedact width={Math.round(w * (0.45 + rng() * 0.4))} height={h - 2} seed={seed ^ 0x51f} messy blend="normal" />
         </span>
       )}
     </span>
@@ -311,6 +317,8 @@ export function paintPaymentRedactions(
   clearPaymentRedactions(root)
   const rng = mulberry32(seed >>> 0)
   root.style.position = 'relative'
+  root.style.isolation = 'isolate'
+  root.style.zIndex = '0'
   const origin = root.getBoundingClientRect()
   const boxes: { x: number; y: number; w: number; h: number }[] = []
 
@@ -353,7 +361,7 @@ export function paintPaymentRedactions(
   for (const b of boxes) {
     const el = document.createElement('div')
     el.setAttribute('data-pay-redact', '1')
-    el.style.cssText = `position:absolute;left:${b.x.toFixed(1)}px;top:${b.y.toFixed(1)}px;width:${b.w.toFixed(1)}px;height:${b.h.toFixed(1)}px;z-index:40;pointer-events:none;overflow:visible`
+    el.style.cssText = `position:absolute;left:${b.x.toFixed(1)}px;top:${b.y.toFixed(1)}px;width:${b.w.toFixed(1)}px;height:${b.h.toFixed(1)}px;z-index:2147483647;pointer-events:none;overflow:visible;isolation:isolate;mix-blend-mode:normal`
     el.innerHTML = brushMarkup(b.w, b.h, (seed + i * 97) >>> 0)
     root.appendChild(el)
     i += 1

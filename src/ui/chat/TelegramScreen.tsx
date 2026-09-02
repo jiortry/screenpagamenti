@@ -383,6 +383,7 @@ function PhotoBody({
           position: 'absolute',
           right: 7,
           bottom: m.text ? 5 : 8,
+          zIndex: 1,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 3,
@@ -576,13 +577,16 @@ function Header({ s, skin }: { s: ChatScenario; skin: TgSkin }) {
         color: skin.headerFg,
         borderBottom: ios ? `0.5px solid ${skin.hairline}` : 'none',
         flexShrink: 0,
+        overflow: 'visible',
+        position: 'relative',
+        zIndex: 20,
       }}
     >
       <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: ios ? skin.accent : skin.headerFg, minWidth: 28 }}>
         <TgBack color={ios ? skin.accent : skin.headerFg} android={!ios} />
       </span>
       <Avatar peer={s.peer} size={ios ? 40 : 44} online={s.kind === 'dm' && s.peer.online} hideInitials={s.redactNames} />
-      <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
+      <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15, overflow: 'visible', position: 'relative', zIndex: 2147483646 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 650, fontSize: ios ? 16 : 17 }}>
           {s.redactNames ? (
             <RedactedName name={s.peer.name} seed={s.seed} fontSize={ios ? 16 : 17} />
