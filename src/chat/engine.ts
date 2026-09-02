@@ -70,6 +70,15 @@ function hhmm(date: Date, locale: string, clock24h: boolean): string {
   return formatClock(date.toISOString(), locale, { clock24h, ios: false })
 }
 
+const TEXT_EMOJI = ['🔥', '🙏', '😂', '✅', '💯', '🙌', '😎', '✨', '👍']
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu
+
+function maybeTextEmoji(text: string, rng: Rng): string {
+  const clean = text.replace(EMOJI_RE, '').replace(/[ \t]{2,}/g, ' ').trim() || text.trim()
+  if (!chance(rng, 0.1)) return clean
+  return `${clean} ${pick(rng, TEXT_EMOJI)}`
+}
+
 function waveform(rng: Rng, n = 28): number[] {
   return Array.from({ length: n }, () => 0.22 + rng() * 0.78)
 }
@@ -174,12 +183,13 @@ function expandTurns(
       if (src) reply = { author: src.author, text: src.text, color: src.color }
     }
 
+    const text = maybeTextEmoji(turn.t, rng)
     const msg: ChatMessage = {
       id,
       from: who.from,
       peerId: who.peer?.id,
       kind: 'text',
-      text: turn.t,
+      text,
       time,
       status,
       reply,
@@ -191,7 +201,7 @@ function expandTurns(
     out.push(msg)
     texts.push({
       i,
-      text: turn.t,
+      text,
       author: who.from === 'me' ? ui.you : who.peer?.name ?? '',
       color: who.peer?.color ?? '#62AC55',
     })
@@ -210,10 +220,11 @@ export function createChatScenario(rng: Rng, seed: number, opts: ChatGenOpts): C
   const skin = skinById(opts.skinId)
   const device = skin.platform === 'ios' ? sampleIphone(rng) : sampleAndroidPhone(rng)
   const fontScale = sampleFontScale(rng, device.family)
-  const allScripts = scriptsFor(loc.id)
-  const photoScripts = allScripts.filter((s) => s.turns.some((t) => 'ph' in t))
+  const allScripts = scriptsFor(loc.id).filter((s) => s.kind !== 'group')
+  const pool = allScripts.length ? allScripts : scriptsFor('en').filter((s) => s.kind !== 'group')
+  const photoScripts = pool.filter((s) => s.turns.some((t) => 'ph' in t))
   const script =
-    photoScripts.length && chance(rng, 0.58) ? pick(rng, photoScripts) : pick(rng, allScripts)
+    photoScripts.length && chance(rng, 0.58) ? pick(rng, photoScripts) : pick(rng, pool)
   const kind = script.kind
 
   const members: ChatPeer[] =

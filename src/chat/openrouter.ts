@@ -22,13 +22,13 @@ Hard rules:
 - Exactly one turn must have kind "pay". That is where a payment-confirmation screenshot will be inserted. No other photos.
 - kind is text | voice | pay.
 - Short Telegram lines. Slang and small typos are ok.
-- Put emojis in many texts. AFTER the pay turn, almost every text MUST end with emojis (🔥🙏😂✅💯 etc).
+- Do NOT put emojis in message text. Almost all lines are plain text.
 - 0 to 2 voice turns (kind "voice", duration like "0:07").
 - Do not add reactions. They are applied later on about 4% of messages.
 - peerName: a realistic first and last name (it will be painted over, never shown).
 
 Shape:
-{"peerName":"Jason Miller","online":true,"turns":[{"from":"them","kind":"text","text":"did it land?"},{"from":"me","kind":"pay"},{"from":"them","kind":"text","text":"got it bro 🔥🙏","rx":"🔥"}]}`
+{"peerName":"Jason Miller","online":true,"turns":[{"from":"them","kind":"text","text":"did it land?"},{"from":"me","kind":"pay"},{"from":"them","kind":"text","text":"got it bro"}]}`
 
 export async function generateReviewScript(): Promise<ReviewScript> {
   const res = await fetch('/openrouter/chat', {

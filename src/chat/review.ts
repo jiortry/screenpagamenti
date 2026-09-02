@@ -18,10 +18,16 @@ function hhmm(date: Date, bcp47: string, clock24h: boolean): string {
 }
 
 const AFTER_PAY_EMOJI = ['🔥', '🙏', '😂', '✅', '💯', '🙌', '😎', '✨']
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu
 
-function ensureEmoji(text: string, rng: Rng): string {
-  if (/[\u{1F300}-\u{1FAFF}]/u.test(text)) return text
-  return `${text} ${pick(rng, AFTER_PAY_EMOJI)}${chance(rng, 0.55) ? pick(rng, AFTER_PAY_EMOJI) : ''}`
+function stripEmojis(text: string): string {
+  return text.replace(EMOJI_RE, '').replace(/[ \t]{2,}/g, ' ').trim()
+}
+
+function maybeEmoji(text: string, rng: Rng): string {
+  const clean = stripEmojis(text) || text.trim() || 'ok'
+  if (!chance(rng, 0.1)) return clean
+  return `${clean} ${pick(rng, AFTER_PAY_EMOJI)}`
 }
 
 function stripNames(text: string, names: string[]): string {
@@ -72,7 +78,6 @@ export function assembleReviewChat(
   ]
 
   const allowPayPhoto = Boolean(opts.paymentPng)
-  let afterPay = false
   let payUsed = false
 
   for (let i = 0; i < opts.script.turns.length; i++) {
@@ -85,7 +90,6 @@ export function assembleReviewChat(
     if (turn.kind === 'pay') {
       if (!allowPayPhoto || payUsed || !opts.paymentPng) continue
       payUsed = true
-      afterPay = true
       messages.push({
         id: `pay-${i}`,
         from,
@@ -117,10 +121,8 @@ export function assembleReviewChat(
       continue
     }
 
-    let text = stripNames((turn.text ?? 'ok').trim(), banned)
+    let text = maybeEmoji(stripNames((turn.text ?? 'ok').trim(), banned), rng)
     if (!text) text = 'ok'
-    if (afterPay) text = ensureEmoji(text, rng)
-    else if (chance(rng, 0.38)) text = ensureEmoji(text, rng)
 
     messages.push({
       id: `t-${i}`,
