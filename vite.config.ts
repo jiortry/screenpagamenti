@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { createScreenHandler } from './server/screen-api.mjs'
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -69,10 +70,42 @@ function openRouterProxy(apiKey: string): Plugin {
   }
 }
 
+function screenApi(apiKey: string): Plugin {
+  return {
+    name: 'screen-api',
+    configureServer(server) {
+      const handle = createScreenHandler({
+        getOrigin: () => {
+          const addr = server.httpServer?.address()
+          const port = typeof addr === 'object' && addr ? addr.port : (server.config.server.port ?? 5173)
+          return `http://localhost:${port}`
+        },
+        apiKey,
+      })
+      server.middlewares.use((req, res, next) => {
+        void handle(req, res, next)
+      })
+    },
+    configurePreviewServer(server) {
+      const handle = createScreenHandler({
+        getOrigin: () => {
+          const addr = server.httpServer?.address()
+          const port = typeof addr === 'object' && addr ? addr.port : (server.config.preview.port ?? 4173)
+          return `http://localhost:${port}`
+        },
+        apiKey,
+      })
+      server.middlewares.use((req, res, next) => {
+        void handle(req, res, next)
+      })
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), openRouterProxy(env.OPENROUTER_API_KEY ?? '')],
+    plugins: [react(), openRouterProxy(env.OPENROUTER_API_KEY ?? ''), screenApi(env.SCREEN_API_KEY ?? '')],
     server: {
       port: 5173,
       proxy: {
