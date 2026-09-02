@@ -1,4 +1,4 @@
-import type { LayoutId, LedgerEntry, LocaleId, PaymentCategory } from '../types.ts'
+import type { LayoutId, LedgerEntry, LocaleId } from '../types.ts'
 import { merchantIcon } from './merchants.ts'
 import { chance, pick, randInt, type Rng } from './random.ts'
 
@@ -105,7 +105,6 @@ export function sampleLedger(
   locale: LocaleId,
   mainTimestamp: string,
   mainAmount: number,
-  category: PaymentCategory,
 ): LedgerEntry[] {
   const pool = MERCHANTS[locale] ?? MERCHANTS.en
   const count = randInt(rng, 2, 4)
@@ -114,8 +113,7 @@ export function sampleLedger(
   const used = new Set<string>()
 
   for (let i = 0; i < count; i++) {
-    const incoming = chance(rng, category.includes('crypto') ? 0.35 : 0.42)
-    const labels = incoming ? pool.in : pool.out
+    const labels = pool.out
     let label = pick(rng, labels)
     let guard = 0
     while (used.has(label) && guard++ < 8) label = pick(rng, labels)
@@ -124,18 +122,12 @@ export function sampleLedger(
     const daysAgo = randInt(rng, 1, 12)
     const hoursAgo = randInt(rng, 0, 23)
     const ts = new Date(mainMs - (daysAgo * 24 + hoursAgo) * 3600000)
-
-    let amountEur: number
-    if (incoming) {
-      amountEur = Math.round((randInt(rng, 180, 3200) + rng() * 80) * 100) / 100
-    } else {
-      const cap = Math.max(8, mainAmount * 0.65)
-      amountEur = Math.round((randInt(rng, 4, Math.floor(cap)) + rng() * 5) * 100) / 100
-    }
+    const cap = Math.max(8, mainAmount * 0.65)
+    const amountEur = Math.round((randInt(rng, 4, Math.floor(cap)) + rng() * 5) * 100) / 100
 
     entries.push({
       id: `L${randInt(rng, 10000, 99999)}`,
-      direction: incoming ? 'in' : 'out',
+      direction: 'out',
       label,
       amountEur,
       timestamp: ts.toISOString(),

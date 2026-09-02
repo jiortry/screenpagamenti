@@ -227,6 +227,7 @@ export type Scenario = {
   timestamp: string
   scheduledFor?: string
   etaLabel: string
+  showStatusBadge: boolean
   visual: VisualVars
   battery: number
   clock: string

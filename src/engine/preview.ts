@@ -1,5 +1,4 @@
-import type { DeviceSpec, Institution, PaymentCategory, QuoteCurrency, RateBook, Scenario } from '../types.ts'
-import { brandProfile } from './brands.ts'
+import type { Appearance, DeviceSpec, Institution, PaymentCategory, QuoteCurrency, RateBook, Scenario } from '../types.ts'
 import { formatClock, formatRate } from './format.ts'
 import {
   pickupCode,
@@ -48,12 +47,16 @@ function categoryFor(kind: Institution['kind']): PaymentCategory {
   }
 }
 
-export function previewScenario(institutionId: string, rates: RateBook, device: DeviceSpec): Scenario {
+export function previewScenario(
+  institutionId: string,
+  rates: RateBook,
+  device: DeviceSpec,
+  appearance: Appearance = 'light',
+): Scenario {
   const institution = INSTITUTIONS.find((i) => i.id === institutionId)
   if (!institution) throw new Error(`Unknown institution ${institutionId}`)
   const rng = mulberry32(institutionId.split('').reduce((n, c) => n + c.charCodeAt(0), 1))
   const category = categoryFor(institution.kind)
-  const brand = brandProfile(institution)
   const crypto = category.includes('crypto')
   const quote: QuoteCurrency = crypto
     ? 'BTC'
@@ -77,7 +80,7 @@ export function previewScenario(institutionId: string, rates: RateBook, device: 
     dir: 'ltr',
     bcp47: 'en-US',
     device,
-    appearance: brand.preferDark ? 'dark' : 'light',
+    appearance,
     fontScale: 1,
     themeId: 'atlas',
     layoutId: pickLayout(category),
@@ -102,6 +105,7 @@ export function previewScenario(institutionId: string, rates: RateBook, device: 
     note: 'Rent April',
     timestamp: ts.toISOString(),
     etaLabel: 'Instant',
+    showStatusBadge: true,
     visual: {
       headerHeight: 64,
       showBalance: true,

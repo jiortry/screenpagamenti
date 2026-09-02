@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { Institution, LedgerEntry, Scenario, TxStatus } from '../types.ts'
+import type { Appearance, Institution, LedgerEntry, Scenario, TxStatus } from '../types.ts'
 import type { ThemeTokens } from '../engine/themes.ts'
-import { brandProfile, type MockupSkin } from '../engine/brands.ts'
+import { brandProfile, brandSkin, type MockupSkin } from '../engine/brands.ts'
 import { formatFiat, formatRelativeActivity } from '../engine/format.ts'
 import { t, tf } from '../i18n/catalog.ts'
 
@@ -46,6 +46,7 @@ export function Monogram({
 
 export function AppLogo({
   institution,
+  appearance = 'light',
   alt,
   size = 36,
   pad,
@@ -53,13 +54,14 @@ export function AppLogo({
   radius,
 }: {
   institution: Institution
+  appearance?: Appearance
   alt: string
   size?: number
   pad?: number
   bg?: string
   radius?: number
 }) {
-  const brand = brandProfile(institution)
+  const brand = brandProfile(institution, appearance)
   const src = brand.icon ?? institution.icon ?? institution.logo
   const logoBg = bg ?? brand.logoBg
   const logoPad = pad ?? brand.logoPad
@@ -482,7 +484,7 @@ export function Actions({
   share: string
   compact?: boolean
 }) {
-  const ui = brandProfile(s.institution).ui
+  const ui = brandSkin(s.institution)
   const radius = ui.pill ? 999 : theme.radius
   const box = actionBox(ui)
   const size = ui.ctaSize

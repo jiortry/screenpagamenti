@@ -77,8 +77,8 @@ export function PaymentScreen({ s }: { s: Scenario }) {
     s.device.family === 'iphone'
       ? '-apple-system, "SF Pro Text", "Noto Sans", sans-serif'
       : 'Roboto, "Noto Sans", sans-serif'
-  const chromeColor = statusBarColor(s.institution)
-  const chromeBg = statusBarBackground(s.institution)
+  const chromeColor = statusBarColor(s.institution, s.appearance)
+  const chromeBg = statusBarBackground(s.institution, s.appearance)
   const m = screenMetrics(s.device.width, s.device.height, s.visual.spacingScale, ui)
 
   return (
@@ -88,6 +88,7 @@ export function PaymentScreen({ s }: { s: Scenario }) {
       data-synthetic="true"
       data-device={s.device.id}
       data-brand={s.institution.id}
+      data-appearance={s.appearance}
       style={{
         width: s.device.width,
         height: s.device.height,
@@ -98,7 +99,7 @@ export function PaymentScreen({ s }: { s: Scenario }) {
         color: theme.text,
         display: 'flex',
         flexDirection: 'column',
-        background: brandBackground(s.institution),
+        background: brandBackground(s.institution, s.appearance),
         boxSizing: 'border-box',
       }}
     >
@@ -144,13 +145,13 @@ function BackChevron({ color }: { color: string }) {
 
 function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
   const theme = screenTheme(s)
-  const brand = brandProfile(s.institution)
+  const brand = brandProfile(s.institution, s.appearance)
   const ui = brand.ui
   const loc = s.locale
   const m = screenMetrics(s.device.width, s.device.height, s.visual.spacingScale, ui)
   const bal = s.accountBalance ?? Math.round((s.amountEur * 2.4 + (s.seed % 1700) + 420) * 100) / 100
   const tint = statusTint(s.status, theme)
-  const status = (
+  const status = s.showStatusBadge ? (
     <span
       style={{
         display: 'inline-flex',
@@ -166,7 +167,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
     >
       {t(loc, statusKey(s.status))}
     </span>
-  )
+  ) : null
 
   if (ui.chrome === 'bare') {
     return (
@@ -225,7 +226,14 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
       <span style={{ display: 'flex', width: 22, flexShrink: 0, opacity: 0.9 }} aria-hidden>
         <BackChevron color={brand.headerText} />
       </span>
-      {ui.brandInHeader && <AppLogo institution={s.institution} alt={s.institution.name} size={m.short ? 24 : 28} />}
+      {ui.brandInHeader && (
+        <AppLogo
+          institution={s.institution}
+          appearance={s.appearance}
+          alt={s.institution.name}
+          size={m.short ? 24 : 28}
+        />
+      )}
       <div style={{ minWidth: 0, flex: 1 }}>
         <div
           style={{
@@ -252,7 +260,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
 
 function skinOf(s: Scenario) {
   const theme = screenTheme(s)
-  const brand = brandProfile(s.institution)
+  const brand = brandProfile(s.institution, s.appearance)
   const ui = brand.ui
   const m = screenMetrics(s.device.width, s.device.height, s.visual.spacingScale, ui)
   const details: MockupSkin['details'] = m.short && ui.details === 'full' ? 'lite' : ui.details
@@ -350,7 +358,7 @@ function PersonMark({ s, letters, size = 52 }: { s: Scenario; letters: string; s
 function HeroLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
-  const person = s.status === 'received' ? s.sender : s.recipient
+  const person = s.recipient
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'from'), s.sender.full])
   rows.push([t(loc, 'to'), s.recipient.full])
@@ -388,7 +396,7 @@ function HeroLayout({ s }: { s: Scenario }) {
 function CryptoLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
-  const conf = s.status === 'confirmed' || s.status === 'completed' ? '12/12' : s.status === 'pending' ? '2/12' : '0/12'
+  const conf = '12/12'
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'from'), s.walletFrom ?? s.sender.full, true])
   rows.push([t(loc, 'to'), s.walletTo ?? s.recipient.full, true])
@@ -425,7 +433,7 @@ function CryptoLayout({ s }: { s: Scenario }) {
 function BankLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
-  const person = s.status === 'received' ? s.sender : s.recipient
+  const person = s.recipient
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'sender'), s.sender.full])
   if (details === 'full') rows.push([t(loc, 'iban'), s.ibanFrom ?? '—', true])
@@ -441,9 +449,6 @@ function BankLayout({ s }: { s: Scenario }) {
   }
   if (details === 'full' && s.conversion.show_rate && !m.short) {
     rows.push([t(loc, 'rate'), s.conversion.display_rate])
-  }
-  if (details === 'full' && s.status !== 'completed' && s.status !== 'sent' && s.status !== 'received') {
-    rows.push([t(loc, 'eta'), s.etaLabel])
   }
   rows.push([t(loc, 'reference'), s.transactionId, true])
   if (details === 'full' && !m.short) rows.push([t(loc, 'note'), s.note])
@@ -568,7 +573,6 @@ function CashLayout({ s }: { s: Scenario }) {
   const rows: Array<[string, string, boolean?]> = [[t(loc, 'sender'), s.sender.full]]
   if (details !== 'min') rows.push([t(loc, 'recipient'), s.recipient.full])
   if (details !== 'min') rows.push([t(loc, 'pickupLocation'), s.pickupPoint ?? '—'])
-  if (details === 'full') rows.push([t(loc, 'eta'), s.etaLabel])
   rows.push([t(loc, 'reference'), s.transactionId, true])
   if (details === 'full' && !m.short) rows.push([t(loc, 'note'), s.note])
   return (

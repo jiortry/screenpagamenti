@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { RateBook } from '../types.ts'
+import type { Appearance, RateBook } from '../types.ts'
 import { deviceById } from '../engine/devices.ts'
 import { PREVIEW_BRANDS, previewScenario } from '../engine/preview.ts'
 import { PaymentScreen } from './PaymentScreen.tsx'
@@ -9,18 +9,20 @@ function Phone({
   rates,
   deviceId,
   scale,
+  appearance,
 }: {
   institutionId: string
   rates: RateBook
   deviceId: string
   scale: number
+  appearance: Appearance
 }) {
   const device = deviceById(deviceId)
-  const s = previewScenario(institutionId, rates, device)
+  const s = previewScenario(institutionId, rates, device, appearance)
   return (
     <figure className="skin-phone">
       <figcaption>
-        {s.institution.short} · {device.width}×{device.height}
+        {s.institution.short} · {appearance} · {device.width}×{device.height}
       </figcaption>
       <div
         className="skin-bezel"
@@ -88,15 +90,24 @@ export function SkinGallery({ rates }: { rates: RateBook }) {
       <header className="skin-gallery-head">
         <p className="eyebrow">Brand skins</p>
         <h1>Per-provider mockups</h1>
-        <p className="lede">Same payment, each institution’s own chrome / amount / rows / CTA. iPhone SE and Pro Max.</p>
+        <p className="lede">Same payment, each institution in light and dark. iPhone SE and Pro Max.</p>
       </header>
       {showSe && (
         <section>
           <h2>iPhone SE 375×667</h2>
           <div className="skin-row">
-            {brands.map((id) => (
-              <Phone key={`se-${id}`} institutionId={id} rates={rates} deviceId="iphone-se" scale={seScale} />
-            ))}
+            {brands.flatMap((id) =>
+              (['light', 'dark'] as const).map((appearance) => (
+                <Phone
+                  key={`se-${id}-${appearance}`}
+                  institutionId={id}
+                  rates={rates}
+                  deviceId="iphone-se"
+                  scale={seScale}
+                  appearance={appearance}
+                />
+              )),
+            )}
           </div>
         </section>
       )}
@@ -104,9 +115,18 @@ export function SkinGallery({ rates }: { rates: RateBook }) {
         <section>
           <h2>iPhone 16 Pro Max 440×956</h2>
           <div className="skin-row">
-            {brands.map((id) => (
-              <Phone key={`max-${id}`} institutionId={id} rates={rates} deviceId="iphone-16-pro-max" scale={maxScale} />
-            ))}
+            {brands.flatMap((id) =>
+              (['light', 'dark'] as const).map((appearance) => (
+                <Phone
+                  key={`max-${id}-${appearance}`}
+                  institutionId={id}
+                  rates={rates}
+                  deviceId="iphone-16-pro-max"
+                  scale={maxScale}
+                  appearance={appearance}
+                />
+              )),
+            )}
           </div>
         </section>
       )}

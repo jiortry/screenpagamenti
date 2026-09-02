@@ -25,17 +25,9 @@ export type MockupSkin = {
   details: 'full' | 'lite' | 'min'
 }
 
-export type BrandProfile = {
-  icon?: string
-  logoBg: string
-  logoPad: number
-  logoRadius: number
-  preferDark: boolean
-  font: string
-  radius: number
+export type BrandColors = {
   headerBg: string
   headerText: string
-  headerStyle: 'full' | 'compact'
   bg: string
   bg2: string
   surface: string
@@ -55,8 +47,18 @@ export type BrandProfile = {
   /** Clock / signal / battery — opposite of the fill. */
   statusBarFg: '#000000' | '#FFFFFF'
   amount: string
-  ui: MockupSkin
 }
+
+export type BrandProfile = {
+  icon?: string
+  logoBg: string
+  logoPad: number
+  logoRadius: number
+  font: string
+  radius: number
+  headerStyle: 'full' | 'compact'
+  ui: MockupSkin
+} & BrandColors
 
 const I = (id: string) => `/logos/icons/${id}.png`
 
@@ -94,11 +96,7 @@ const UI: MockupSkin = {
   details: 'full',
 }
 
-type BrandInput = {
-  logoBg: string
-  logoPad: number
-  logoRadius: number
-  preferDark: boolean
+type ColorInput = {
   bg: string
   surface: string
   text: string
@@ -107,9 +105,6 @@ type BrandInput = {
   accent: string
   button: string
   buttonText: string
-  font?: string
-  radius?: number
-  headerStyle?: 'full' | 'compact'
   accent2?: string
   warning?: string
   bg2?: string
@@ -119,22 +114,34 @@ type BrandInput = {
   headerBg?: string
   headerText?: string
   amount?: string
+}
+
+type SharedInput = {
+  logoBg: string
+  logoPad: number
+  logoRadius: number
+  font?: string
+  radius?: number
+  headerStyle?: 'full' | 'compact'
   ui?: Partial<MockupSkin>
 }
 
-function mk(id: string, p: BrandInput): BrandProfile {
-  const dark = p.preferDark
-  const statusBarBg: '#FFFFFF' | '#000000' = dark ? '#000000' : '#FFFFFF'
-  const statusBarFg: '#000000' | '#FFFFFF' = dark ? '#FFFFFF' : '#000000'
+type BrandDef = {
+  icon?: string
+  logoBg: string
+  logoPad: number
+  logoRadius: number
+  font: string
+  radius: number
+  headerStyle: 'full' | 'compact'
+  ui: MockupSkin
+  light: BrandColors
+  dark: BrandColors
+}
+
+function paint(mode: Appearance, p: ColorInput): BrandColors {
+  const dark = mode === 'dark'
   return {
-    icon: I(id),
-    font: p.font ?? SYS,
-    radius: p.radius ?? 12,
-    headerStyle: p.headerStyle ?? 'compact',
-    logoBg: p.logoBg,
-    logoPad: p.logoPad,
-    logoRadius: p.logoRadius,
-    preferDark: dark,
     headerBg: p.headerBg ?? (dark ? '#000000' : '#FFFFFF'),
     headerText: p.headerText ?? (dark ? '#FFFFFF' : p.text),
     bg: p.bg,
@@ -151,11 +158,77 @@ function mk(id: string, p: BrandInput): BrandProfile {
     success: p.success ?? '#16A34A',
     danger: p.danger ?? '#DC2626',
     warning: p.warning ?? '#D97706',
-    statusBarBg,
-    statusBarFg,
+    statusBarBg: dark ? '#000000' : '#FFFFFF',
+    statusBarFg: dark ? '#FFFFFF' : '#000000',
     amount: p.amount ?? (dark ? '#FFFFFF' : '#111111'),
+  }
+}
+
+function deriveDark(light: ColorInput, tweaks: Partial<ColorInput> = {}): BrandColors {
+  return paint('dark', {
+    bg: '#0C0E11',
+    bg2: '#161A1F',
+    surface: '#1C1F24',
+    text: '#F5F5F7',
+    muted: '#8B919A',
+    line: '#2A2E33',
+    accent: light.accent,
+    accent2: light.accent2,
+    button: light.button,
+    buttonText: light.buttonText,
+    success: light.success,
+    danger: light.danger,
+    warning: light.warning,
+    chip: '#25282C',
+    amount: '#FFFFFF',
+    headerBg: '#000000',
+    headerText: '#FFFFFF',
+    ...tweaks,
+  })
+}
+
+function deriveLight(dark: ColorInput, tweaks: Partial<ColorInput> = {}): BrandColors {
+  return paint('light', {
+    bg: '#F5F7FA',
+    bg2: '#EEF1F5',
+    surface: '#FFFFFF',
+    text: '#111111',
+    muted: '#6B7280',
+    line: '#E5E7EB',
+    accent: dark.accent,
+    accent2: dark.accent2,
+    button: dark.button,
+    buttonText: dark.buttonText,
+    success: dark.success,
+    danger: dark.danger,
+    warning: dark.warning,
+    chip: '#F3F4F6',
+    amount: '#111111',
+    headerBg: '#FFFFFF',
+    headerText: tweaks.text ?? '#111111',
+    ...tweaks,
+  })
+}
+
+function meta(id: string, p: SharedInput): Omit<BrandDef, 'light' | 'dark'> {
+  return {
+    icon: I(id),
+    font: p.font ?? SYS,
+    radius: p.radius ?? 12,
+    headerStyle: p.headerStyle ?? 'compact',
+    logoBg: p.logoBg,
+    logoPad: p.logoPad,
+    logoRadius: p.logoRadius,
     ui: inferDetails({ ...UI, ...p.ui }, p.ui),
   }
+}
+
+function mk(id: string, p: SharedInput & { light: ColorInput; dark?: Partial<ColorInput> }): BrandDef {
+  return { ...meta(id, p), light: paint('light', p.light), dark: deriveDark(p.light, p.dark) }
+}
+
+function mkDark(id: string, p: SharedInput & { dark: ColorInput; light?: Partial<ColorInput> }): BrandDef {
+  return { ...meta(id, p), dark: paint('dark', p.dark), light: deriveLight(p.dark, p.light) }
 }
 
 function inferDetails(ui: MockupSkin, override?: Partial<MockupSkin>): MockupSkin {
@@ -169,283 +242,414 @@ function inferDetails(ui: MockupSkin, override?: Partial<MockupSkin>): MockupSki
   return { ...ui, details }
 }
 
-const PROFILES: Record<string, BrandProfile> = {
+const PROFILES: Record<string, BrandDef> = {
   'intesa-sanpaolo': mk('intesa-sanpaolo', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    bg: '#F4F5F4', surface: '#fff', text: '#1A1A1A', muted: '#5F6B5F', line: '#E4EAE4',
-    accent: '#258900', button: '#258900', buttonText: '#fff',
-    success: '#258900',
+    logoBg: '#fff', logoPad: 3, logoRadius: 8,
+    light: {
+      bg: '#F4F5F4', surface: '#fff', text: '#1A1A1A', muted: '#5F6B5F', line: '#E4EAE4',
+      accent: '#258900', button: '#258900', buttonText: '#fff', success: '#258900',
+    },
+    dark: { bg: '#0B100C', bg2: '#121A13', surface: '#182218', muted: '#8A9A8A', line: '#2A382A' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.55, tracking: -0.3, card: 'shadow', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'stick', ctaInset: 0, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   unicredit: mk('unicredit', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
-    bg: '#F7F7F7', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E8E8E8',
-    accent: '#E2001A', button: '#E2001A', buttonText: '#fff',
-    radius: 8, font: IBM,
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, font: IBM, radius: 8,
+    light: {
+      bg: '#F7F7F7', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E8E8E8',
+      accent: '#E2001A', button: '#E2001A', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.45, tracking: 0, card: 'plain', rows: 'rule', avatar: 'none', cta: 'one', ctaPlace: 'flush', ctaInset: 0, ctaSize: 'sm', ctaSecondary: 'none', ctaLook: 'outline', ctaLabel: 'done', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   fineco: mk('fineco', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
-    bg: '#F3F6FA', surface: '#fff', text: '#0F2744', muted: '#5A6E82', line: '#DCE4EE',
-    accent: '#00549F', button: '#00549F', buttonText: '#fff',
-    radius: 8, font: IBM,
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, font: IBM, radius: 8,
+    light: {
+      bg: '#F3F6FA', surface: '#fff', text: '#0F2744', muted: '#5A6E82', line: '#DCE4EE',
+      accent: '#00549F', button: '#00549F', buttonText: '#fff',
+    },
+    dark: { bg: '#0A1522', bg2: '#0F2744', surface: '#152C48', muted: '#8AA0B4', line: '#243A54' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.35, tracking: 0, card: 'plain', rows: 'stack', avatar: 'none', cta: 'one', ctaPlace: 'raised', ctaInset: 12, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'done', density: 'tight', hairline: false, brandInHeader: true, pill: false, weight: 650 },
   }),
   chase: mk('chase', {
-    logoBg: '#117ACA', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F5F7FA', surface: '#fff', text: '#0A2540', muted: '#5A6B7D', line: '#DCE3EA',
-    accent: '#117ACA', button: '#117ACA', buttonText: '#fff',
-    radius: 8,
+    logoBg: '#117ACA', logoPad: 4, logoRadius: 8, radius: 8,
+    light: {
+      bg: '#F5F7FA', surface: '#fff', text: '#0A2540', muted: '#5A6B7D', line: '#DCE3EA',
+      accent: '#117ACA', button: '#117ACA', buttonText: '#fff',
+    },
+    dark: { bg: '#071321', bg2: '#0A2540', surface: '#12324C', muted: '#8A9BB0', line: '#1E3A54' },
     ui: { chrome: 'toolbar', hero: 'amount', amountAlign: 'start', amountEm: 2.05, tracking: -0.8, card: 'none', rows: 'space', avatar: 'none', cta: 'one', ctaPlace: 'stick', ctaInset: 4, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: true, pill: false, weight: 700 },
   }),
   'bank-of-america': mk('bank-of-america', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 6, preferDark: false,
-    bg: '#F4F5F7', surface: '#fff', text: '#012169', muted: '#5C6478', line: '#DDE1E8',
-    accent: '#E31837', accent2: '#012169', button: '#012169', buttonText: '#fff',
-    radius: 6,
+    logoBg: '#fff', logoPad: 3, logoRadius: 6, radius: 6,
+    light: {
+      bg: '#F4F5F7', surface: '#fff', text: '#012169', muted: '#5C6478', line: '#DDE1E8',
+      accent: '#E31837', accent2: '#012169', button: '#012169', buttonText: '#fff',
+    },
+    dark: { bg: '#070B18', bg2: '#012169', surface: '#0C1A3A', muted: '#8A93A8', line: '#1A2A50' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.5, tracking: -0.2, card: 'border', rows: 'rule', avatar: 'none', cta: 'stack', ctaPlace: 'flush', ctaInset: 8, ctaSize: 'sm', ctaSecondary: 'text', ctaLook: 'underline', ctaLabel: 'done', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   'wells-fargo': mk('wells-fargo', {
-    logoBg: '#D71E28', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
-    accent: '#D71E28', button: '#D71E28', buttonText: '#fff',
-    radius: 8,
+    logoBg: '#D71E28', logoPad: 4, logoRadius: 8, radius: 8,
+    light: {
+      bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+      accent: '#D71E28', button: '#D71E28', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'center', amountEm: 1.7, tracking: -0.4, card: 'shadow', rows: 'rule', avatar: 'round', cta: 'split', ctaPlace: 'stick', ctaInset: 6, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 800 },
   }),
-  revolut: mk('revolut', {
-    logoBg: '#0666EB', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#000000', bg2: '#191C1F', surface: '#191C1F', text: '#F5F5F5', muted: '#8B919A', line: '#2A2E33',
-    accent: '#0666EB', button: '#0666EB', buttonText: '#fff',
-    chip: '#25282C', radius: 18, font: INTER, amount: '#FFFFFF',
+  revolut: mkDark('revolut', {
+    logoBg: '#0666EB', logoPad: 4, logoRadius: 12, font: INTER, radius: 18,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#000000', bg2: '#191C1F', surface: '#191C1F', text: '#F5F5F5', muted: '#8B919A', line: '#2A2E33',
+      accent: '#0666EB', button: '#0666EB', buttonText: '#fff',
+      chip: '#25282C', amount: '#FFFFFF',
+    },
+    light: {
+      headerBg: '#FFFFFF', headerText: '#191C1F',
+      bg: '#FFFFFF', bg2: '#F4F5F7', surface: '#F4F5F7', text: '#191C1F', muted: '#6B7280', line: '#E6E8EC',
+      accent: '#0666EB', button: '#0666EB', buttonText: '#fff',
+      chip: '#EEF2F7', amount: '#191C1F',
+    },
     ui: { chrome: 'bare', hero: 'person', amountAlign: 'center', amountEm: 2.35, tracking: -1.4, card: 'none', rows: 'space', avatar: 'circle', cta: 'one', ctaPlace: 'raised', ctaInset: 20, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 600 },
   }),
   n26: mk('n26', {
-    logoBg: '#36A18B', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#FAFBFA', surface: '#fff', text: '#1B1B1B', muted: '#6B7A76', line: '#E6EEEC',
-    accent: '#36A18B', button: '#36A18B', buttonText: '#fff',
-    radius: 8, font: BARLOW, success: '#36A18B',
+    logoBg: '#36A18B', logoPad: 4, logoRadius: 12, font: BARLOW, radius: 8,
+    light: {
+      bg: '#FAFBFA', surface: '#fff', text: '#1B1B1B', muted: '#6B7A76', line: '#E6EEEC',
+      accent: '#36A18B', button: '#36A18B', buttonText: '#fff', success: '#36A18B',
+    },
+    dark: {
+      bg: '#0F1413', bg2: '#15201D', surface: '#1A2623', text: '#F5F7F6', muted: '#8B9A96', line: '#2A3834',
+      success: '#36A18B',
+    },
     ui: { chrome: 'minimal', hero: 'person', amountAlign: 'center', amountEm: 2.1, tracking: 0.2, card: 'none', rows: 'space', avatar: 'circle', cta: 'one', ctaPlace: 'follow', ctaInset: 8, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'back', density: 'air', hairline: false, brandInHeader: false, pill: false, weight: 500, details: 'min' },
   }),
   'deutsche-bank': mk('deutsche-bank', {
-    logoBg: '#0018A8', logoPad: 4, logoRadius: 2, preferDark: false,
-    bg: '#F4F5F8', surface: '#fff', text: '#0018A8', muted: '#5C6080', line: '#D8DAE4',
-    accent: '#0018A8', button: '#0018A8', buttonText: '#fff',
-    radius: 2, font: IBM,
+    logoBg: '#0018A8', logoPad: 4, logoRadius: 2, font: IBM, radius: 2,
+    light: {
+      bg: '#F4F5F8', surface: '#fff', text: '#0018A8', muted: '#5C6080', line: '#D8DAE4',
+      accent: '#0018A8', button: '#0018A8', buttonText: '#fff',
+    },
+    dark: { bg: '#050A1C', bg2: '#0018A8', surface: '#0C1640', muted: '#8A90B0', line: '#1A2458' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.3, tracking: 0, card: 'border', rows: 'rule', avatar: 'none', cta: 'stack', ctaPlace: 'raised', ctaInset: 0, ctaSize: 'sm', ctaSecondary: 'ghost', ctaLook: 'text', ctaLabel: 'back', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 600 },
   }),
   commerzbank: mk('commerzbank', {
-    logoBg: '#FFE600', logoPad: 3, logoRadius: 4, preferDark: false,
-    bg: '#F3F5F6', surface: '#fff', text: '#002E3C', muted: '#5C6B70', line: '#D6DEE0',
-    accent: '#002E3C', accent2: '#FFE600', button: '#002E3C', buttonText: '#FFE600',
-    radius: 4, font: IBM,
+    logoBg: '#FFE600', logoPad: 3, logoRadius: 4, font: IBM, radius: 4,
+    light: {
+      bg: '#F3F5F6', surface: '#fff', text: '#002E3C', muted: '#5C6B70', line: '#D6DEE0',
+      accent: '#002E3C', accent2: '#FFE600', button: '#002E3C', buttonText: '#FFE600',
+    },
+    dark: { bg: '#061016', bg2: '#002E3C', surface: '#0C2832', muted: '#8A9AA0', line: '#1A3840', button: '#FFE600', buttonText: '#002E3C' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.4, tracking: 0, card: 'border', rows: 'rule', avatar: 'none', cta: 'split', ctaPlace: 'flush', ctaInset: 0, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'done', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   'bnp-paribas': mk('bnp-paribas', {
-    logoBg: '#00915A', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F3F8F5', surface: '#fff', text: '#14332A', muted: '#5C7A6B', line: '#D7E6DD',
-    accent: '#00915A', button: '#00915A', buttonText: '#fff',
-    success: '#00915A',
+    logoBg: '#00915A', logoPad: 4, logoRadius: 8,
+    light: {
+      bg: '#F3F8F5', surface: '#fff', text: '#14332A', muted: '#5C7A6B', line: '#D7E6DD',
+      accent: '#00915A', button: '#00915A', buttonText: '#fff', success: '#00915A',
+    },
+    dark: { bg: '#081410', bg2: '#0E241C', surface: '#14332A', muted: '#8AACA0', line: '#1E4A3A' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'center', amountEm: 1.65, tracking: -0.4, card: 'shadow', rows: 'rule', avatar: 'round', cta: 'one', ctaPlace: 'stick', ctaInset: 16, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: true, weight: 700 },
   }),
   'societe-generale': mk('societe-generale', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 4, preferDark: false,
-    bg: '#F5F5F5', surface: '#fff', text: '#111', muted: '#666', line: '#E2E2E2',
-    accent: '#E60028', button: '#000000', buttonText: '#fff',
-    radius: 4,
+    logoBg: '#fff', logoPad: 3, logoRadius: 4, radius: 4,
+    light: {
+      bg: '#F5F5F5', surface: '#fff', text: '#111', muted: '#666', line: '#E2E2E2',
+      accent: '#E60028', button: '#000000', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.4, tracking: 0, card: 'plain', rows: 'stack', avatar: 'none', cta: 'stack', ctaPlace: 'stick', ctaInset: 22, ctaSize: 'md', ctaSecondary: 'text', ctaLook: 'underline', ctaLabel: 'back', density: 'tight', hairline: false, brandInHeader: true, pill: false, weight: 700 },
   }),
   bcr: mk('bcr', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    bg: '#F4F6F8', surface: '#fff', text: '#003366', muted: '#5C6B7A', line: '#D8DEE6',
-    accent: '#E2001A', button: '#003366', buttonText: '#fff',
+    logoBg: '#fff', logoPad: 3, logoRadius: 8,
+    light: {
+      bg: '#F4F6F8', surface: '#fff', text: '#003366', muted: '#5C6B7A', line: '#D8DEE6',
+      accent: '#E2001A', button: '#003366', buttonText: '#fff',
+    },
+    dark: { bg: '#061018', bg2: '#003366', surface: '#0C2448', muted: '#8A9CB0', line: '#1A3A5C' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.5, tracking: -0.2, card: 'border', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'stick', ctaInset: 10, ctaSize: 'lg', ctaSecondary: 'ghost', ctaLook: 'outline', ctaLabel: 'back', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   brd: mk('brd', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    bg: '#F7F4F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C60', line: '#E6DCE0',
-    accent: '#CC092F', button: '#CC092F', buttonText: '#fff',
+    logoBg: '#fff', logoPad: 3, logoRadius: 8,
+    light: {
+      bg: '#F7F4F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C60', line: '#E6DCE0',
+      accent: '#CC092F', button: '#CC092F', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'center', amountEm: 1.6, tracking: -0.3, card: 'shadow', rows: 'rule', avatar: 'round', cta: 'split', ctaPlace: 'raised', ctaInset: 8, ctaSize: 'sm', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 800 },
   }),
   barclays: mk('barclays', {
-    logoBg: '#00AEEF', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F3F8FC', surface: '#fff', text: '#00395D', muted: '#5C7A8A', line: '#D4E4EE',
-    accent: '#00AEEF', button: '#00AEEF', buttonText: '#fff',
+    logoBg: '#00AEEF', logoPad: 4, logoRadius: 8,
+    light: {
+      bg: '#F3F8FC', surface: '#fff', text: '#00395D', muted: '#5C7A8A', line: '#D4E4EE',
+      accent: '#00AEEF', button: '#00AEEF', buttonText: '#fff',
+    },
+    dark: { bg: '#06141C', bg2: '#00395D', surface: '#0C2A44', muted: '#8AADC0', line: '#1A4A66' },
     ui: { chrome: 'toolbar', hero: 'amount', amountAlign: 'start', amountEm: 1.95, tracking: -0.7, card: 'none', rows: 'space', avatar: 'none', cta: 'one', ctaPlace: 'raised', ctaInset: 2, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'underline', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: true, pill: false, weight: 700 },
   }),
   hsbc: mk('hsbc', {
-    logoBg: '#DB0011', logoPad: 4, logoRadius: 6, preferDark: false,
-    bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
-    accent: '#DB0011', button: '#DB0011', buttonText: '#fff',
-    radius: 6,
+    logoBg: '#DB0011', logoPad: 4, logoRadius: 6, radius: 6,
+    light: {
+      bg: '#F7F5F5', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+      accent: '#DB0011', button: '#DB0011', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.45, tracking: 0, card: 'border', rows: 'rule', avatar: 'none', cta: 'stack', ctaPlace: 'flush', ctaInset: 4, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'text', ctaLabel: 'back', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   santander: mk('santander', {
-    logoBg: '#EC0000', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
-    accent: '#EC0000', button: '#EC0000', buttonText: '#fff',
-    radius: 16, font: MANROPE,
+    logoBg: '#EC0000', logoPad: 4, logoRadius: 12, font: MANROPE, radius: 16,
+    light: {
+      bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+      accent: '#EC0000', button: '#EC0000', buttonText: '#fff',
+    },
     ui: { chrome: 'minimal', hero: 'person', amountAlign: 'center', amountEm: 1.9, tracking: -0.5, card: 'shadow', rows: 'rule', avatar: 'circle', cta: 'stack', ctaPlace: 'raised', ctaInset: 18, ctaSize: 'md', ctaSecondary: 'text', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 800 },
   }),
   bbva: mk('bbva', {
-    logoBg: '#004481', logoPad: 4, logoRadius: 10, preferDark: false,
-    bg: '#F2F6FA', surface: '#fff', text: '#072146', muted: '#5B708B', line: '#D5DEE8',
-    accent: '#004481', button: '#004481', buttonText: '#fff',
-    radius: 8, font: DM,
+    logoBg: '#004481', logoPad: 4, logoRadius: 10, font: DM, radius: 8,
+    light: {
+      bg: '#F2F6FA', surface: '#fff', text: '#072146', muted: '#5B708B', line: '#D5DEE8',
+      accent: '#004481', button: '#004481', buttonText: '#fff',
+    },
+    dark: { bg: '#061018', bg2: '#072146', surface: '#0C2C50', muted: '#8A9CB4', line: '#1A3A60' },
     ui: { chrome: 'toolbar', hero: 'amount', amountAlign: 'start', amountEm: 1.85, tracking: -0.6, card: 'none', rows: 'stack', avatar: 'none', cta: 'one', ctaPlace: 'follow', ctaInset: 0, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'outline', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: true, pill: false, weight: 700 },
   }),
   ubs: mk('ubs', {
-    logoBg: '#E60000', logoPad: 4, logoRadius: 4, preferDark: false,
-    bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#666', line: '#E2E2E2',
-    accent: '#E60000', button: '#000000', buttonText: '#fff',
-    radius: 4, font: IBM,
+    logoBg: '#E60000', logoPad: 4, logoRadius: 4, font: IBM, radius: 4,
+    light: {
+      bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#666', line: '#E2E2E2',
+      accent: '#E60000', button: '#000000', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.25, tracking: 0.1, card: 'plain', rows: 'rule', avatar: 'none', cta: 'stack', ctaPlace: 'stick', ctaInset: 20, ctaSize: 'sm', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'done', density: 'tight', hairline: true, brandInHeader: true, pill: false, weight: 600 },
   }),
   'standard-bank': mk('standard-bank', {
-    logoBg: '#0033A0', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
-    accent: '#0033A0', button: '#0033A0', buttonText: '#fff',
+    logoBg: '#0033A0', logoPad: 4, logoRadius: 8,
+    light: {
+      bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
+      accent: '#0033A0', button: '#0033A0', buttonText: '#fff',
+    },
+    dark: { bg: '#060E22', bg2: '#0033A0', surface: '#0C1C48', muted: '#8A9AB8', line: '#1A2E60' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.55, tracking: -0.2, card: 'border', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'raised', ctaInset: 14, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'back', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   ecobank: mk('ecobank', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 8, preferDark: false,
-    bg: '#F3F6F8', surface: '#fff', text: '#003B5C', muted: '#5C7080', line: '#D4E0E6',
-    accent: '#00A651', button: '#003B5C', buttonText: '#fff',
+    logoBg: '#fff', logoPad: 3, logoRadius: 8,
+    light: {
+      bg: '#F3F6F8', surface: '#fff', text: '#003B5C', muted: '#5C7080', line: '#D4E0E6',
+      accent: '#00A651', button: '#003B5C', buttonText: '#fff',
+    },
+    dark: { bg: '#061018', bg2: '#003B5C', surface: '#0C2838', muted: '#8AA0B0', line: '#1A4050' },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'center', amountEm: 1.6, tracking: -0.3, card: 'shadow', rows: 'rule', avatar: 'round', cta: 'split', ctaPlace: 'stick', ctaInset: 10, ctaSize: 'lg', ctaSecondary: 'ghost', ctaLook: 'outline', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   paypal: mk('paypal', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 12, preferDark: false,
-    headerBg: '#FFFFFF', headerText: '#001C64',
-    bg: '#FFFFFF', surface: '#FFFFFF', text: '#001C64', muted: '#6B7C93', line: '#E1E7EF',
-    accent: '#0070BA', accent2: '#003087', button: '#0070BA', buttonText: '#fff',
-    radius: 100, font: JOST, success: '#00A857',
+    logoBg: '#fff', logoPad: 3, logoRadius: 12, font: JOST, radius: 100,
+    light: {
+      headerBg: '#FFFFFF', headerText: '#001C64',
+      bg: '#FFFFFF', surface: '#FFFFFF', text: '#001C64', muted: '#6B7C93', line: '#E1E7EF',
+      accent: '#0070BA', accent2: '#003087', button: '#0070BA', buttonText: '#fff', success: '#00A857',
+    },
+    dark: {
+      headerBg: '#000000', headerText: '#FFFFFF',
+      bg: '#001433', bg2: '#001C64', surface: '#0A2540', text: '#F5F8FC', muted: '#8BA3C7', line: '#1A3A66',
+      accent: '#0070BA', accent2: '#0070BA', button: '#0070BA', buttonText: '#fff', success: '#00A857',
+      chip: '#0F2A4D', amount: '#FFFFFF',
+    },
     ui: { chrome: 'bare', hero: 'person', amountAlign: 'center', amountEm: 2.2, tracking: -0.6, card: 'none', rows: 'stack', avatar: 'check', cta: 'one', ctaPlace: 'raised', ctaInset: 16, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 600, details: 'lite' },
   }),
-  'apple-pay': mk('apple-pay', {
-    logoBg: '#000', logoPad: 5, logoRadius: 12, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#000000', bg2: '#1C1C1E', surface: '#1C1C1E', text: '#F5F5F7', muted: '#8E8E93', line: '#38383A',
-    accent: '#FFFFFF', button: '#FFFFFF', buttonText: '#000000',
-    chip: '#2C2C2E', radius: 14, amount: '#FFFFFF',
+  'apple-pay': mkDark('apple-pay', {
+    logoBg: '#000', logoPad: 5, logoRadius: 12, radius: 14,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#000000', bg2: '#1C1C1E', surface: '#1C1C1E', text: '#F5F5F7', muted: '#8E8E93', line: '#38383A',
+      accent: '#FFFFFF', button: '#FFFFFF', buttonText: '#000000',
+      chip: '#2C2C2E', amount: '#FFFFFF',
+    },
+    light: {
+      headerBg: '#F2F2F7', headerText: '#000000',
+      bg: '#F2F2F7', bg2: '#E5E5EA', surface: '#FFFFFF', text: '#000000', muted: '#6C6C70', line: '#D1D1D6',
+      accent: '#000000', button: '#000000', buttonText: '#FFFFFF',
+      chip: '#E5E5EA', amount: '#000000',
+    },
     ui: { chrome: 'bare', hero: 'amount', amountAlign: 'center', amountEm: 2.55, tracking: -1.6, card: 'none', rows: 'space', avatar: 'none', cta: 'one', ctaPlace: 'stick', ctaInset: 28, ctaSize: 'sm', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 600 },
   }),
   'google-pay': mk('google-pay', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 12, preferDark: false,
-    bg: '#FFFFFF', surface: '#F8F9FA', text: '#202124', muted: '#5F6368', line: '#E8EAED',
-    accent: '#1A73E8', button: '#1A73E8', buttonText: '#fff',
-    radius: 24, font: 'Roboto, "Noto Sans", sans-serif',
+    logoBg: '#fff', logoPad: 3, logoRadius: 12, font: 'Roboto, "Noto Sans", sans-serif', radius: 24,
+    light: {
+      bg: '#FFFFFF', surface: '#F8F9FA', text: '#202124', muted: '#5F6368', line: '#E8EAED',
+      accent: '#1A73E8', button: '#1A73E8', buttonText: '#fff',
+    },
+    dark: {
+      bg: '#202124', bg2: '#2D2E30', surface: '#2D2E30', text: '#E8EAED', muted: '#9AA0A6', line: '#3C4043',
+      accent: '#8AB4F8', button: '#8AB4F8', buttonText: '#202124', chip: '#3C4043', amount: '#E8EAED',
+    },
     ui: { chrome: 'minimal', hero: 'person', amountAlign: 'start', amountEm: 1.7, tracking: 0, card: 'none', rows: 'stack', avatar: 'circle', cta: 'split', ctaPlace: 'raised', ctaInset: 12, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'underline', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 500 },
   }),
   venmo: mk('venmo', {
-    logoBg: '#008CFF', logoPad: 5, logoRadius: 14, preferDark: false,
-    bg: '#F5F8FB', surface: '#fff', text: '#1A3A52', muted: '#6A8494', line: '#D9E6EE',
-    accent: '#008CFF', button: '#008CFF', buttonText: '#fff',
-    radius: 20, font: MANROPE,
+    logoBg: '#008CFF', logoPad: 5, logoRadius: 14, font: MANROPE, radius: 20,
+    light: {
+      bg: '#F5F8FB', surface: '#fff', text: '#1A3A52', muted: '#6A8494', line: '#D9E6EE',
+      accent: '#008CFF', button: '#008CFF', buttonText: '#fff',
+    },
+    dark: {
+      bg: '#001C32', bg2: '#003354', surface: '#0A2A44', text: '#F5F8FB', muted: '#8BA8BC', line: '#1A3F5C',
+      chip: '#0F334C', amount: '#FFFFFF',
+    },
     ui: { chrome: 'bare', hero: 'person', amountAlign: 'center', amountEm: 2.45, tracking: -1.1, card: 'none', rows: 'space', avatar: 'circle', cta: 'split', ctaPlace: 'follow', ctaInset: 22, ctaSize: 'lg', ctaSecondary: 'text', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 800 },
   }),
-  'cash-app': mk('cash-app', {
-    logoBg: '#00D632', logoPad: 5, logoRadius: 14, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#000000', bg2: '#111111', surface: '#111111', text: '#FFFFFF', muted: '#9CA3AF', line: '#2A2A2A',
-    accent: '#00D632', button: '#00D632', buttonText: '#000000',
-    chip: '#1A1A1A', radius: 16, font: SPACE, amount: '#00D632',
+  'cash-app': mkDark('cash-app', {
+    logoBg: '#00D632', logoPad: 5, logoRadius: 14, font: SPACE, radius: 16,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#000000', bg2: '#111111', surface: '#111111', text: '#FFFFFF', muted: '#9CA3AF', line: '#2A2A2A',
+      accent: '#00D632', button: '#00D632', buttonText: '#000000',
+      chip: '#1A1A1A', amount: '#00D632',
+    },
+    light: {
+      headerBg: '#FFFFFF', headerText: '#000000',
+      bg: '#FFFFFF', bg2: '#F5F5F5', surface: '#F5F5F5', text: '#000000', muted: '#6B7280', line: '#E5E5E5',
+      accent: '#00D632', button: '#00D632', buttonText: '#000000',
+      chip: '#EEFBF1', amount: '#00D632',
+    },
     ui: { chrome: 'bare', hero: 'amount', amountAlign: 'center', amountEm: 2.7, tracking: -1.8, card: 'none', rows: 'space', avatar: 'none', cta: 'one', ctaPlace: 'follow', ctaInset: 28, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'underline', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: false, weight: 700 },
   }),
   wise: mk('wise', {
-    logoBg: '#9FE870', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#F2F2F2', surface: '#fff', text: '#0E0F0C', muted: '#5C6356', line: '#E2E4DC',
-    accent: '#9FE870', button: '#9FE870', buttonText: '#163300',
-    radius: 16, font: MANROPE, amount: '#0E0F0C',
+    logoBg: '#9FE870', logoPad: 4, logoRadius: 12, font: MANROPE, radius: 16,
+    light: {
+      bg: '#F2F2F2', surface: '#fff', text: '#0E0F0C', muted: '#5C6356', line: '#E2E4DC',
+      accent: '#9FE870', button: '#9FE870', buttonText: '#163300', amount: '#0E0F0C',
+    },
+    dark: {
+      bg: '#0E0F0C', bg2: '#163300', surface: '#163300', text: '#F2F2F2', muted: '#A8B89A', line: '#2A3D14',
+      accent: '#9FE870', button: '#9FE870', buttonText: '#163300', chip: '#1C3A08', amount: '#FFFFFF',
+    },
     ui: { chrome: 'minimal', hero: 'pair', amountAlign: 'center', amountEm: 2.0, tracking: -0.9, card: 'none', rows: 'space', avatar: 'circle', cta: 'one', ctaPlace: 'stick', ctaInset: 24, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 800 },
   }),
   'western-union': mk('western-union', {
-    logoBg: '#FFDD00', logoPad: 3, logoRadius: 6, preferDark: false,
-    bg: '#FAFAF5', surface: '#fff', text: '#1A1A1A', muted: '#6B6B5C', line: '#E8E4D4',
-    accent: '#FFDD00', button: '#000000', buttonText: '#FFDD00',
-    radius: 8,
+    logoBg: '#FFDD00', logoPad: 3, logoRadius: 6, radius: 8,
+    light: {
+      bg: '#FAFAF5', surface: '#fff', text: '#1A1A1A', muted: '#6B6B5C', line: '#E8E4D4',
+      accent: '#FFDD00', button: '#000000', buttonText: '#FFDD00',
+    },
+    dark: { bg: '#11110C', bg2: '#1A1A14', surface: '#222218', button: '#FFDD00', buttonText: '#000000' },
     ui: { chrome: 'toolbar', hero: 'pair', amountAlign: 'center', amountEm: 1.7, tracking: -0.2, card: 'border', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'raised', ctaInset: 6, ctaSize: 'lg', ctaSecondary: 'ghost', ctaLook: 'outline', ctaLabel: 'back', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 800 },
   }),
   remitly: mk('remitly', {
-    logoBg: '#316AFF', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#F4F6FF', surface: '#fff', text: '#1A2A52', muted: '#5C6B8A', line: '#DCE2F0',
-    accent: '#316AFF', button: '#316AFF', buttonText: '#fff',
-    radius: 14, font: DM,
+    logoBg: '#316AFF', logoPad: 4, logoRadius: 12, font: DM, radius: 14,
+    light: {
+      bg: '#F4F6FF', surface: '#fff', text: '#1A2A52', muted: '#5C6B8A', line: '#DCE2F0',
+      accent: '#316AFF', button: '#316AFF', buttonText: '#fff',
+    },
+    dark: { bg: '#0A1024', bg2: '#121A3A', surface: '#1A2448', muted: '#8A9AB8', line: '#2A3660' },
     ui: { chrome: 'minimal', hero: 'pair', amountAlign: 'center', amountEm: 1.85, tracking: -0.5, card: 'shadow', rows: 'stack', avatar: 'circle', cta: 'stack', ctaPlace: 'follow', ctaInset: 16, ctaSize: 'sm', ctaSecondary: 'text', ctaLook: 'underline', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 700 },
   }),
-  binance: mk('binance', {
-    logoBg: '#1E2329', logoPad: 4, logoRadius: 8, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#0B0E11', bg2: '#1E2329', surface: '#1E2329', text: '#EAECEF', muted: '#848E9C', line: '#2B3139',
-    accent: '#F0B90B', button: '#F0B90B', buttonText: '#0B0E11',
-    chip: '#2B3139', radius: 8, font: IBM, amount: '#FFFFFF',
+  binance: mkDark('binance', {
+    logoBg: '#1E2329', logoPad: 4, logoRadius: 8, font: IBM, radius: 8,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#0B0E11', bg2: '#1E2329', surface: '#1E2329', text: '#EAECEF', muted: '#848E9C', line: '#2B3139',
+      accent: '#F0B90B', button: '#F0B90B', buttonText: '#0B0E11',
+      chip: '#2B3139', amount: '#FFFFFF',
+    },
+    light: {
+      headerBg: '#FFFFFF', headerText: '#1E2329',
+      bg: '#FAFAFA', bg2: '#F0F1F2', surface: '#FFFFFF', text: '#1E2329', muted: '#707A8A', line: '#E6E8EA',
+      accent: '#F0B90B', button: '#F0B90B', buttonText: '#0B0E11',
+      chip: '#F5F5F5', amount: '#1E2329',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.55, tracking: 0, card: 'plain', rows: 'rule', avatar: 'none', cta: 'one', ctaPlace: 'flush', ctaInset: 0, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'tight', hairline: false, brandInHeader: true, pill: false, weight: 600 },
   }),
   coinbase: mk('coinbase', {
-    logoBg: '#0052FF', logoPad: 5, logoRadius: 14, preferDark: false,
-    bg: '#FFFFFF', surface: '#F5F8FF', text: '#0A0B0D', muted: '#5C6370', line: '#E6EAF2',
-    accent: '#0052FF', button: '#0052FF', buttonText: '#fff',
-    radius: 16, font: INTER,
+    logoBg: '#0052FF', logoPad: 5, logoRadius: 14, font: INTER, radius: 16,
+    light: {
+      bg: '#FFFFFF', surface: '#F5F8FF', text: '#0A0B0D', muted: '#5C6370', line: '#E6EAF2',
+      accent: '#0052FF', button: '#0052FF', buttonText: '#fff',
+    },
+    dark: {
+      bg: '#0A0B0D', bg2: '#12141A', surface: '#16181D', text: '#F5F8FF', muted: '#8B93A1', line: '#2A2E38',
+      chip: '#1A1D24', amount: '#FFFFFF',
+    },
     ui: { chrome: 'minimal', hero: 'amount', amountAlign: 'center', amountEm: 2.05, tracking: -1.2, card: 'none', rows: 'stack', avatar: 'circle', cta: 'one', ctaPlace: 'raised', ctaInset: 32, ctaSize: 'sm', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 400, details: 'min' },
   }),
-  kraken: mk('kraken', {
-    logoBg: '#5741D9', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#000000', bg2: '#12121A', surface: '#12121A', text: '#F0F0F5', muted: '#8B8B9A', line: '#242430',
-    accent: '#5741D9', button: '#5741D9', buttonText: '#fff',
-    chip: '#1A1A24', radius: 12, font: DM, amount: '#FFFFFF',
+  kraken: mkDark('kraken', {
+    logoBg: '#5741D9', logoPad: 4, logoRadius: 12, font: DM, radius: 12,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#000000', bg2: '#12121A', surface: '#12121A', text: '#F0F0F5', muted: '#8B8B9A', line: '#242430',
+      accent: '#5741D9', button: '#5741D9', buttonText: '#fff',
+      chip: '#1A1A24', amount: '#FFFFFF',
+    },
+    light: {
+      headerBg: '#FFFFFF', headerText: '#12121A',
+      bg: '#F7F7FA', bg2: '#EEEEF4', surface: '#FFFFFF', text: '#12121A', muted: '#5C5C6B', line: '#E4E4EA',
+      accent: '#5741D9', button: '#5741D9', buttonText: '#fff',
+      chip: '#EEEAFB', amount: '#12121A',
+    },
     ui: { chrome: 'toolbar', hero: 'ledger', amountAlign: 'start', amountEm: 1.55, tracking: -0.4, card: 'border', rows: 'space', avatar: 'none', cta: 'one', ctaPlace: 'stick', ctaInset: 8, ctaSize: 'sm', ctaSecondary: 'none', ctaLook: 'underline', ctaLabel: 'back', density: 'tight', hairline: false, brandInHeader: true, pill: false, weight: 600 },
   }),
-  'crypto-com': mk('crypto-com', {
-    logoBg: '#002D74', logoPad: 4, logoRadius: 12, preferDark: true,
-    headerBg: '#000000', headerText: '#fff',
-    bg: '#000000', bg2: '#0B1426', surface: '#0F1A2E', text: '#E8ECF4', muted: '#7A8BA8', line: '#1E2D4A',
-    accent: '#1199FA', button: '#1199FA', buttonText: '#fff',
-    chip: '#152238', radius: 12, font: OUTFIT, amount: '#FFFFFF',
+  'crypto-com': mkDark('crypto-com', {
+    logoBg: '#002D74', logoPad: 4, logoRadius: 12, font: OUTFIT, radius: 12,
+    dark: {
+      headerBg: '#000000', headerText: '#fff',
+      bg: '#000000', bg2: '#0B1426', surface: '#0F1A2E', text: '#E8ECF4', muted: '#7A8BA8', line: '#1E2D4A',
+      accent: '#1199FA', button: '#1199FA', buttonText: '#fff',
+      chip: '#152238', amount: '#FFFFFF',
+    },
+    light: {
+      headerBg: '#FFFFFF', headerText: '#0B1426',
+      bg: '#F4F7FB', bg2: '#E8EEF6', surface: '#FFFFFF', text: '#0B1426', muted: '#5A6B82', line: '#DCE3EE',
+      accent: '#1199FA', button: '#1199FA', buttonText: '#fff',
+      chip: '#E8F4FE', amount: '#0B1426',
+    },
     ui: { chrome: 'minimal', hero: 'amount', amountAlign: 'center', amountEm: 2.0, tracking: -0.8, card: 'none', rows: 'space', avatar: 'circle', cta: 'stack', ctaPlace: 'flush', ctaInset: 18, ctaSize: 'lg', ctaSecondary: 'none', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 700 },
   }),
   tim: mk('tim', {
-    logoBg: '#0033A0', logoPad: 4, logoRadius: 10, preferDark: false,
-    bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
-    accent: '#E30613', button: '#0033A0', buttonText: '#fff',
+    logoBg: '#0033A0', logoPad: 4, logoRadius: 10,
+    light: {
+      bg: '#F3F5FA', surface: '#fff', text: '#0033A0', muted: '#5C6B8A', line: '#D6DEE8',
+      accent: '#E30613', button: '#0033A0', buttonText: '#fff',
+    },
+    dark: { bg: '#060E22', bg2: '#0033A0', surface: '#0C1C48', muted: '#8A9AB8', line: '#1A2E60' },
     ui: { chrome: 'toolbar', hero: 'operator', amountAlign: 'center', amountEm: 1.6, tracking: -0.2, card: 'border', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'raised', ctaInset: 10, ctaSize: 'md', ctaSecondary: 'ghost', ctaLook: 'outline', ctaLabel: 'back', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   vodafone: mk('vodafone', {
-    logoBg: '#E60000', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
-    accent: '#E60000', button: '#E60000', buttonText: '#fff',
-    radius: 16, font: MANROPE,
+    logoBg: '#E60000', logoPad: 4, logoRadius: 12, font: MANROPE, radius: 16,
+    light: {
+      bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+      accent: '#E60000', button: '#E60000', buttonText: '#fff',
+    },
     ui: { chrome: 'minimal', hero: 'operator', amountAlign: 'center', amountEm: 1.85, tracking: -0.5, card: 'shadow', rows: 'rule', avatar: 'circle', cta: 'stack', ctaPlace: 'stick', ctaInset: 14, ctaSize: 'lg', ctaSecondary: 'text', ctaLook: 'fill', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 800 },
   }),
   orange: mk('orange', {
-    logoBg: '#FF7900', logoPad: 4, logoRadius: 12, preferDark: false,
-    bg: '#FFF8F2', surface: '#fff', text: '#000000', muted: '#6B6050', line: '#F0E4D6',
-    accent: '#FF7900', button: '#FF7900', buttonText: '#fff',
-    radius: 16, font: OUTFIT,
+    logoBg: '#FF7900', logoPad: 4, logoRadius: 12, font: OUTFIT, radius: 16,
+    light: {
+      bg: '#FFF8F2', surface: '#fff', text: '#000000', muted: '#6B6050', line: '#F0E4D6',
+      accent: '#FF7900', button: '#FF7900', buttonText: '#fff',
+    },
+    dark: { bg: '#14100C', bg2: '#1C1610', surface: '#241E16', muted: '#A89880', line: '#3A3024' },
     ui: { chrome: 'minimal', hero: 'operator', amountAlign: 'center', amountEm: 1.9, tracking: -0.6, card: 'none', rows: 'stack', avatar: 'round', cta: 'one', ctaPlace: 'follow', ctaInset: 20, ctaSize: 'md', ctaSecondary: 'none', ctaLook: 'text', ctaLabel: 'done', density: 'air', hairline: false, brandInHeader: false, pill: true, weight: 700, details: 'min' },
   }),
   moneygram: mk('moneygram', {
-    logoBg: '#DF2127', logoPad: 4, logoRadius: 8, preferDark: false,
-    bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
-    accent: '#DF2127', button: '#DF2127', buttonText: '#fff',
+    logoBg: '#DF2127', logoPad: 4, logoRadius: 8,
+    light: {
+      bg: '#F7F4F4', surface: '#fff', text: '#1A1A1A', muted: '#6B5C5C', line: '#E8DEDE',
+      accent: '#DF2127', button: '#DF2127', buttonText: '#fff',
+    },
     ui: { chrome: 'toolbar', hero: 'code', amountAlign: 'center', amountEm: 1.55, tracking: 0.4, card: 'border', rows: 'rule', avatar: 'round', cta: 'stack', ctaPlace: 'flush', ctaInset: 2, ctaSize: 'lg', ctaSecondary: 'ghost', ctaLook: 'underline', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 800 },
   }),
   visa: mk('visa', {
-    logoBg: '#1A1F71', logoPad: 4, logoRadius: 6, preferDark: false,
-    bg: '#F4F5FA', surface: '#fff', text: '#1A1F71', muted: '#5C6080', line: '#D8DCE8',
-    accent: '#1A1F71', button: '#1A1F71', buttonText: '#F7B600',
-    radius: 6, font: IBM,
+    logoBg: '#1A1F71', logoPad: 4, logoRadius: 6, font: IBM, radius: 6,
+    light: {
+      bg: '#F4F5FA', surface: '#fff', text: '#1A1F71', muted: '#5C6080', line: '#D8DCE8',
+      accent: '#1A1F71', button: '#1A1F71', buttonText: '#F7B600',
+    },
+    dark: { bg: '#080A1C', bg2: '#1A1F71', surface: '#121848', muted: '#8A90B0', line: '#242A5C', button: '#1A1F71', buttonText: '#F7B600' },
     ui: { chrome: 'toolbar', hero: 'cards', amountAlign: 'start', amountEm: 1.5, tracking: 0.2, card: 'shadow', rows: 'rule', avatar: 'none', cta: 'stack', ctaPlace: 'raised', ctaInset: 8, ctaSize: 'sm', ctaSecondary: 'ghost', ctaLook: 'outline', ctaLabel: 'done', density: 'normal', hairline: true, brandInHeader: true, pill: false, weight: 700 },
   }),
   mastercard: mk('mastercard', {
-    logoBg: '#fff', logoPad: 3, logoRadius: 10, preferDark: false,
-    bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E4E4E4',
-    accent: '#EB001B', accent2: '#F79E1B', button: '#EB001B', buttonText: '#fff',
-    radius: 12, font: OUTFIT,
+    logoBg: '#fff', logoPad: 3, logoRadius: 10, font: OUTFIT, radius: 12,
+    light: {
+      bg: '#F6F6F6', surface: '#fff', text: '#1A1A1A', muted: '#6B6B6B', line: '#E4E4E4',
+      accent: '#EB001B', accent2: '#F79E1B', button: '#EB001B', buttonText: '#fff',
+    },
     ui: { chrome: 'minimal', hero: 'cards', amountAlign: 'center', amountEm: 1.7, tracking: -0.4, card: 'shadow', rows: 'space', avatar: 'circle', cta: 'split', ctaPlace: 'stick', ctaInset: 18, ctaSize: 'sm', ctaSecondary: 'ghost', ctaLook: 'fill', ctaLabel: 'done', density: 'normal', hairline: false, brandInHeader: false, pill: true, weight: 700 },
   }),
 }
 
-const DEFAULT: BrandProfile = {
+const DEFAULT: BrandDef = {
   icon: undefined,
   font: SYS,
   radius: 12,
@@ -453,39 +657,43 @@ const DEFAULT: BrandProfile = {
   logoBg: '#fff',
   logoPad: 4,
   logoRadius: 10,
-  preferDark: false,
-  headerBg: '#FFFFFF',
-  headerText: '#111111',
-  statusBarBg: '#FFFFFF',
-  statusBarFg: '#000000',
-  bg: '#F5F7FA',
-  bg2: '#F5F7FA',
-  surface: '#fff',
-  text: '#1A1A1A',
-  muted: '#6B7280',
-  line: '#E5E7EB',
-  accent: '#1E3A5F',
-  accent2: '#1E3A5F',
-  button: '#1E3A5F',
-  buttonText: '#fff',
-  chip: '#F3F4F6',
-  success: '#16A34A',
-  danger: '#DC2626',
-  warning: '#D97706',
-  amount: '#111111',
   ui: UI,
+  light: paint('light', {
+    bg: '#F5F7FA', surface: '#fff', text: '#1A1A1A', muted: '#6B7280', line: '#E5E7EB',
+    accent: '#1E3A5F', button: '#1E3A5F', buttonText: '#fff',
+  }),
+  dark: paint('dark', {
+    bg: '#0C0E11', bg2: '#161A1F', surface: '#1C1F24', text: '#F5F5F7', muted: '#8B919A', line: '#2A2E33',
+    accent: '#1E3A5F', button: '#1E3A5F', buttonText: '#fff', chip: '#25282C', amount: '#FFFFFF',
+  }),
 }
 
-export function brandProfile(institution: Institution): BrandProfile {
-  return PROFILES[institution.id] ?? { ...DEFAULT, icon: institution.icon ?? institution.logo }
+function resolve(def: BrandDef, appearance: Appearance): BrandProfile {
+  const c = appearance === 'dark' ? def.dark : def.light
+  return {
+    icon: def.icon,
+    logoBg: def.logoBg,
+    logoPad: def.logoPad,
+    logoRadius: def.logoRadius,
+    font: def.font,
+    radius: def.radius,
+    headerStyle: def.headerStyle,
+    ui: def.ui,
+    ...c,
+  }
+}
+
+export function brandProfile(institution: Institution, appearance: Appearance): BrandProfile {
+  const def = PROFILES[institution.id] ?? { ...DEFAULT, icon: institution.icon ?? institution.logo }
+  return resolve(def, appearance)
 }
 
 export function brandedTheme(
   _base: ThemeTokens,
   institution: Institution,
-  _appearance: Appearance,
+  appearance: Appearance,
 ): ThemeTokens {
-  const b = brandProfile(institution)
+  const b = brandProfile(institution, appearance)
   return {
     id: _base.id,
     font: b.font,
@@ -509,23 +717,24 @@ export function brandedTheme(
 }
 
 export function brandLogoSrc(institution: Institution): string {
-  return brandProfile(institution).icon ?? institution.icon ?? institution.logo
+  const def = PROFILES[institution.id]
+  return def?.icon ?? institution.icon ?? institution.logo
 }
 
-export function statusBarColor(institution: Institution): string {
-  return brandProfile(institution).statusBarFg
+export function statusBarColor(institution: Institution, appearance: Appearance): string {
+  return brandProfile(institution, appearance).statusBarFg
 }
 
-export function statusBarBackground(institution: Institution): string {
-  return brandProfile(institution).statusBarBg
+export function statusBarBackground(institution: Institution, appearance: Appearance): string {
+  return brandProfile(institution, appearance).statusBarBg
 }
 
-export function brandBackground(institution: Institution): string {
-  return brandProfile(institution).bg
+export function brandBackground(institution: Institution, appearance: Appearance): string {
+  return brandProfile(institution, appearance).bg
 }
 
 export function brandSkin(institution: Institution): MockupSkin {
-  return brandProfile(institution).ui
+  return (PROFILES[institution.id] ?? DEFAULT).ui
 }
 
 export function screenMetrics(width: number, height: number, spacingScale: number, ui: MockupSkin) {

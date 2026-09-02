@@ -50,6 +50,13 @@ export function qcScenario(s: Scenario, rates: RateBook): QcResult {
     }
   }
 
+  if (s.status !== 'completed' && s.status !== 'sent' && s.status !== 'confirmed') {
+    issues.push({ code: 'status', detail: `Non-terminal outgoing status: ${s.status}` })
+  }
+  if (s.recentActivity?.some((e) => e.direction === 'in')) {
+    issues.push({ code: 'direction', detail: 'Recent activity must be outgoing only' })
+  }
+
   const pack = CATALOG[s.locale]
   if (!pack) issues.push({ code: 'i18n', detail: `Unknown locale ${s.locale}` })
   if (!NOTES[s.locale]?.includes(s.note)) {

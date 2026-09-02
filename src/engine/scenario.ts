@@ -30,12 +30,7 @@ import { convertFromEur, isCryptoQuote } from './math.ts'
 import { synthPair } from './names.ts'
 import { chance, pick, pickWeighted, randInt, type Rng } from './random.ts'
 import { pickLayout, pickTheme } from './themes.ts'
-import {
-  CANCEL_REASONS,
-  FAIL_REASONS,
-  NOTES,
-  tf,
-} from '../i18n/catalog.ts'
+import { NOTES, tf } from '../i18n/catalog.ts'
 import { formatClock, formatRate } from './format.ts'
 
 const CATEGORIES: { value: PaymentCategory; weight: number }[] = [
@@ -57,15 +52,9 @@ const CATEGORIES: { value: PaymentCategory; weight: number }[] = [
 ]
 
 const STATUSES: { value: TxStatus; weight: number }[] = [
-  { value: 'completed', weight: 26 },
-  { value: 'sent', weight: 12 },
-  { value: 'received', weight: 12 },
-  { value: 'confirmed', weight: 12 },
-  { value: 'processing', weight: 10 },
-  { value: 'pending', weight: 10 },
-  { value: 'scheduled', weight: 6 },
-  { value: 'failed', weight: 7 },
-  { value: 'cancelled', weight: 5 },
+  { value: 'completed', weight: 45 },
+  { value: 'sent', weight: 30 },
+  { value: 'confirmed', weight: 25 },
 ]
 
 function cryptoOf(category: PaymentCategory): CryptoQuote | null {
@@ -136,17 +125,8 @@ function makeConversion(
   }
 }
 
-function etaFor(rng: Rng, status: TxStatus, locale: Scenario['locale'], category: PaymentCategory): string {
-  if (status === 'completed' || status === 'received' || status === 'sent' || status === 'confirmed') {
-    return tf(locale, 'etaInstant', 0)
-  }
-  if (status === 'failed' || status === 'cancelled') return '—'
-  if (category === 'swift' || category === 'international_transfer') {
-    return tf(locale, 'etaDays', randInt(rng, 1, 3))
-  }
-  if (status === 'scheduled') return tf(locale, 'etaDays', randInt(rng, 1, 2))
-  if (chance(rng, 0.5)) return tf(locale, 'etaMinutes', randInt(rng, 2, 45))
-  return tf(locale, 'etaHours', randInt(rng, 1, 6))
+function etaFor(locale: Scenario['locale']): string {
+  return tf(locale, 'etaInstant', 0)
 }
 
 function visuals(rng: Rng, layout: LayoutId, fontScale: number): VisualVars {
@@ -178,8 +158,11 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   const themeId = pickTheme(rng, category)
   const layoutId = pickLayout(category)
   const institution = pickInstitution(rng, category, locale.id)
-  const brand = brandProfile(institution)
-  const appearance: Appearance = brand.preferDark ? 'dark' : 'light'
+  const appearance: Appearance = chance(rng, 0.5) ? 'dark' : 'light'
+  const brand = brandProfile(institution, appearance)
+  const hideChance =
+    brand.ui.chrome === 'bare' ? 0.65 : brand.ui.chrome === 'minimal' ? 0.45 : 0.3
+  const showStatusBadge = !chance(rng, hideChance)
   const { sender, recipient } = synthPair(rng, locale.id)
   const amountEur = sampleEurAmount(rng)
   const feeEur = sampleFeeEur(rng, category, amountEur)
@@ -199,18 +182,11 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   }
 
   const now = Date.now()
-  const offsetMin = randInt(rng, -14 * 24 * 60, status === 'scheduled' ? -30 : 0)
+  const offsetMin = randInt(rng, -14 * 24 * 60, 0)
   const ts = new Date(now + offsetMin * 60000)
-  const scheduledFor =
-    status === 'scheduled'
-      ? new Date(now + randInt(rng, 6, 72) * 3600000).toISOString()
-      : undefined
 
   const crypto = cryptoOf(category)
   const note = pick(rng, NOTES[locale.id])
-  let statusReason: string | undefined
-  if (status === 'failed') statusReason = pick(rng, FAIL_REASONS[locale.id])
-  if (status === 'cancelled') statusReason = pick(rng, CANCEL_REASONS[locale.id])
 
   const carrier = pickCarrier(rng, locale.id, institution.region)
   const ios = device.family === 'iphone'
@@ -239,10 +215,9 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     secondary,
     transactionId: transactionId(rng, category),
     note,
-    statusReason,
     timestamp: ts.toISOString(),
-    scheduledFor,
-    etaLabel: etaFor(rng, status, locale.id, category),
+    etaLabel: etaFor(locale.id),
+    showStatusBadge,
     visual: visuals(rng, layoutId, fontScale),
     battery: randInt(rng, 18, 100),
     clock: formatClock(ts.toISOString(), locale.bcp47, ios),
@@ -283,23 +258,13 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     scenario.cardTo = synthCardMask(rng)
   }
 
-  const mainOutgoing =
-    status === 'sent' ||
-    status === 'completed' ||
-    status === 'processing' ||
-    status === 'pending' ||
-    status === 'scheduled' ||
-    status === 'confirmed' ||
-    status === 'failed' ||
-    status === 'cancelled'
-
   if (shouldShowActivity(rng, layoutId)) {
-    const ledger = sampleLedger(rng, locale.id, scenario.timestamp, amountEur, category)
+    const ledger = sampleLedger(rng, locale.id, scenario.timestamp, amountEur)
     scenario.recentActivity = ledger
-    scenario.accountBalance = accountBalance(seed, amountEur, ledger, mainOutgoing)
+    scenario.accountBalance = accountBalance(seed, amountEur, ledger, true)
     scenario.visual.showBalance = true
   } else if (chance(rng, 0.55)) {
-    scenario.accountBalance = accountBalance(seed, amountEur, [], mainOutgoing)
+    scenario.accountBalance = accountBalance(seed, amountEur, [], true)
     scenario.visual.showBalance = true
   }
 
