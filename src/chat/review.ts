@@ -30,16 +30,6 @@ function maybeEmoji(text: string, rng: Rng): string {
   return `${clean} ${pick(rng, AFTER_PAY_EMOJI)}`
 }
 
-function stripNames(text: string, names: string[]): string {
-  let out = text
-  for (const n of names) {
-    if (n.length < 2) continue
-    const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
-    out = out.replace(re, '██')
-  }
-  return out
-}
-
 export function assembleReviewChat(
   rng: Rng,
   seed: number,
@@ -51,8 +41,6 @@ export function assembleReviewChat(
   const device = skin.platform === 'ios' ? sampleIphone(rng) : sampleAndroidPhone(rng)
   const fontScale = sampleFontScale(rng, device.family)
   const name = opts.script.peerName || 'Alex Morgan'
-  const parts = name.split(/\s+/).filter(Boolean)
-  const banned = [...new Set([name, ...parts])].filter((p) => p.length > 1)
 
   const allowVoice = chance(rng, 0.42)
   const extraRx = ['👍', '🔥', '❤️', '😂', '🙏', '✅'] as const
@@ -120,7 +108,7 @@ export function assembleReviewChat(
       continue
     }
 
-    let text = maybeEmoji(stripNames((turn.text ?? 'ok').trim(), banned), rng)
+    let text = maybeEmoji((turn.text ?? 'ok').trim(), rng)
     if (!text) text = 'ok'
 
     messages.push({

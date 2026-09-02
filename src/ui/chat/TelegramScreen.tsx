@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { splitCensored } from '../../chat/censor.ts'
 import { chatUi } from '../../chat/copy.ts'
 import { resolveWall, skinById } from '../../chat/skins.ts'
 import type { ChatMessage, ChatPeer, ChatScenario, TgSkin, TgSkinId, TgWallId } from '../../chat/types.ts'
@@ -228,14 +229,33 @@ function iHash(id: string): number {
   return h >>> 0
 }
 
-function paintCensor(text: string, seed: number) {
-  const bits = text.split(/(██+)/)
-  return bits.map((bit, i) =>
-    bit.startsWith('██') ? (
-      <RedactedName key={i} name={'xxxxxx'.slice(0, Math.max(4, bit.length + 2))} seed={seed + i * 17} fontSize={15} />
-    ) : (
-      <span key={i}>{bit}</span>
-    ),
+function peerNames(s: ChatScenario): string[] {
+  const names = [s.peer.name, ...s.members.map((p) => p.name)]
+  const parts = names.flatMap((n) => n.split(/\s+/))
+  return [...new Set([...names, ...parts])].filter((n) => n.length > 1)
+}
+
+function CensoredLine({
+  text,
+  seed,
+  fontSize,
+  names,
+}: {
+  text: string
+  seed: number
+  fontSize: number
+  names: string[]
+}) {
+  return (
+    <>
+      {splitCensored(text, names).map((piece, i) =>
+        piece.kind === 'hide' ? (
+          <RedactedName key={i} name={piece.value} seed={seed + i * 17} fontSize={fontSize} />
+        ) : (
+          <span key={i}>{piece.value}</span>
+        ),
+      )}
+    </>
   )
 }
 
@@ -244,21 +264,23 @@ function TextBody({
   skin,
   mine,
   ui,
-  redact,
+  names,
   seed,
 }: {
   m: ChatMessage
   skin: TgSkin
   mine: boolean
   ui: ReturnType<typeof chatUi>
-  redact?: boolean
+  names: string[]
   seed: number
 }) {
+  const fontSize = skin.platform === 'ios' ? 17 : 16
   return (
     <>
       {m.forwardedFrom && (
         <div style={{ flexBasis: '100%', width: '100%', fontSize: 13, fontWeight: 600, color: mine ? skin.replyBar : skin.accent, marginBottom: 3 }}>
-          {ui.forwarded} {m.forwardedFrom}
+          {ui.forwarded}{' '}
+          <CensoredLine text={m.forwardedFrom} seed={seed ^ 0x21} fontSize={13} names={names} />
         </div>
       )}
       {m.reply && (
@@ -277,10 +299,10 @@ function TextBody({
           <span style={{ width: 2.5, borderRadius: 2, background: m.reply.color, flexShrink: 0 }} />
           <span style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 650, color: m.reply.color, lineHeight: 1.15 }}>
-              {redact ? <RedactedName name={m.reply.author} seed={seed ^ 0x55} fontSize={13} /> : m.reply.author}
+              {names.length ? <RedactedName name={m.reply.author} seed={seed ^ 0x55} fontSize={13} /> : m.reply.author}
             </div>
             <div style={{ fontSize: 13, opacity: 0.78, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
-              {redact ? paintCensor(m.reply.text, seed + 3) : m.reply.text}
+              <CensoredLine text={m.reply.text} seed={seed + 3} fontSize={13} names={names} />
             </div>
           </span>
         </div>
@@ -297,7 +319,7 @@ function TextBody({
       >
         <span
           style={{
-            fontSize: skin.platform === 'ios' ? 17 : 16,
+            fontSize,
             lineHeight: 1.312,
             whiteSpace: 'pre-wrap',
             overflowWrap: 'normal',
@@ -305,7 +327,7 @@ function TextBody({
             color: mine ? skin.outFg : skin.inFg,
           }}
         >
-          {redact ? paintCensor(m.text ?? '', seed) : m.text}
+          <CensoredLine text={m.text ?? ''} seed={seed} fontSize={fontSize} names={names} />
         </span>
         <Meta m={m} skin={skin} mine={mine} editedLabel={ui.edited} mode="inline" />
       </span>
@@ -320,8 +342,12 @@ function TextBody({
           }}
         >
           <div style={{ fontSize: 12, opacity: 0.7 }}>{m.link.site}</div>
-          <div style={{ fontSize: 14, fontWeight: 650 }}>{m.link.title}</div>
-          <div style={{ fontSize: 13, opacity: 0.78 }}>{m.link.desc}</div>
+          <div style={{ fontSize: 14, fontWeight: 650 }}>
+            <CensoredLine text={m.link.title} seed={seed ^ 0x71} fontSize={14} names={names} />
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.78 }}>
+            <CensoredLine text={m.link.desc} seed={seed ^ 0x81} fontSize={13} names={names} />
+          </div>
         </div>
       )}
     </>
@@ -588,7 +614,14 @@ function MessageRow({
             />
           )}
           {m.kind === 'text' && (
-            <TextBody m={m} skin={skin} mine={mine} ui={ui} redact={s.redactNames} seed={s.seed + iHash(m.id)} />
+            <TextBody
+              m={m}
+              skin={skin}
+              mine={mine}
+              ui={ui}
+              names={s.redactNames ? peerNames(s) : []}
+              seed={s.seed + iHash(m.id)}
+            />
           )}
           {m.reactions && <Reactions items={m.reactions} />}
         </BubbleShell>

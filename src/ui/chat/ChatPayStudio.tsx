@@ -225,8 +225,9 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
         <h1>Review chat</h1>
         <p className="lede">
           Gemini 2.5 Flash writes an English Telegram review. The bank screen is generated, painted
-          over with a red editor brush, exported to PNG, then dropped in as the only photo. Contact
-          names are redacted. Reactions show on about 4% of messages.
+          over with a red editor brush, exported to PNG, then dropped in as the only photo. Names,
+          references, notes, phones and other identifiers are scribbled out, with a couple of letters
+          left visible. Reactions show on about 4% of messages.
         </p>
 
         <div className={`rate-card ${blocked ? 'bad' : 'ok'}`}>

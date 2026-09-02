@@ -1,3 +1,4 @@
+import { revealEnds } from '../../chat/censor.ts'
 import { mulberry32, type Rng } from '../../engine/random.ts'
 
 const INKS = ['#C62828', '#E53935', '#B71C1C', '#D32F2F', '#F44336', '#B71C1C']
@@ -162,51 +163,65 @@ export function RedactedName({
   fontSize?: number
 }) {
   const rng = mulberry32(seed >>> 0)
+  const { left, mid, right } = revealEnds(name)
+  const cover = mid || name
   const factor = 0.44 + rng() * 0.28
-  const w = Math.max(48, Math.round(name.length * fontSize * factor) + Math.round((rng() - 0.3) * 18))
+  const w = Math.max(36, Math.round(cover.length * fontSize * factor) + Math.round((rng() - 0.3) * 14))
   const h = Math.round(fontSize + 4 + rng() * 8)
-  const ox = Math.round((rng() - 0.55) * 10)
-  const oy = Math.round((rng() - 0.5) * 6)
+  const ox = Math.round((rng() - 0.55) * 8)
+  const oy = Math.round((rng() - 0.5) * 5)
   const extra = rng() > 0.55
   return (
     <span
       style={{
-        position: 'relative',
-        display: 'inline-block',
-        width: w,
-        height: h,
+        display: 'inline-flex',
+        alignItems: 'baseline',
         verticalAlign: 'middle',
         userSelect: 'none',
-        zIndex: 2147483647,
-        isolation: 'isolate',
-        overflow: 'visible',
+        maxWidth: '100%',
       }}
       aria-label="redacted"
       title=""
     >
+      {left ? <span>{left}</span> : null}
       <span
         style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.05 + rng() * 0.07,
-          fontSize,
-          fontWeight: 650,
+          position: 'relative',
+          display: 'inline-block',
+          width: w,
+          height: Math.max(fontSize + 2, h - 2),
+          zIndex: 2147483647,
+          isolation: 'isolate',
           overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          filter: `blur(${2.4 + rng() * 2.4}px)`,
-          pointerEvents: 'none',
+          flexShrink: 0,
+          verticalAlign: 'middle',
         }}
       >
-        {name}
-      </span>
-      <span style={{ position: 'absolute', left: ox - 4, top: oy - 3, zIndex: 2147483647, pointerEvents: 'none' }}>
-        <BrushRedact width={w + 10} height={h + 2} seed={seed} messy blend="normal" />
-      </span>
-      {extra && (
-        <span style={{ position: 'absolute', left: ox + Math.round((rng() - 0.5) * 14), top: oy + Math.round((rng() - 0.5) * 5), zIndex: 2147483647, pointerEvents: 'none' }}>
-          <BrushRedact width={Math.round(w * (0.45 + rng() * 0.4))} height={h - 2} seed={seed ^ 0x51f} messy blend="normal" />
+        <span
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.05 + rng() * 0.07,
+            fontSize,
+            fontWeight: 650,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            filter: `blur(${2.4 + rng() * 2.4}px)`,
+            pointerEvents: 'none',
+          }}
+        >
+          {cover}
         </span>
-      )}
+        <span style={{ position: 'absolute', left: Math.min(0, ox), top: oy - 2, zIndex: 2147483647, pointerEvents: 'none' }}>
+          <BrushRedact width={w + 4} height={h} seed={seed} messy blend="normal" />
+        </span>
+        {extra && (
+          <span style={{ position: 'absolute', left: Math.round(w * 0.15), top: oy, zIndex: 2147483647, pointerEvents: 'none' }}>
+            <BrushRedact width={Math.round(w * (0.55 + rng() * 0.25))} height={h - 2} seed={seed ^ 0x51f} messy blend="normal" />
+          </span>
+        )}
+      </span>
+      {right ? <span>{right}</span> : null}
     </span>
   )
 }
@@ -215,9 +230,20 @@ export function clearPaymentRedactions(root: HTMLElement) {
   root.querySelectorAll('[data-pay-redact]').forEach((n) => n.remove())
 }
 
+function expandNeedle(text: string, p: number): { text: string; p: number }[] {
+  const t = text.trim()
+  if (t.replace(/[•\s]/g, '').length < 3) return []
+  const out = [{ text: t, p }]
+  const compact = t.replace(/\s+/g, '')
+  if (compact !== t && compact.length >= 3) out.push({ text: compact, p })
+  return out
+}
+
 function needlesFromScenario(s: {
   sender: { full: string; given: string; family: string }
   recipient: { full: string; given: string; family: string }
+  note?: string
+  transactionId?: string
   ibanFrom?: string
   ibanTo?: string
   ibanFromMasked?: string
@@ -228,44 +254,52 @@ function needlesFromScenario(s: {
   walletTo?: string
   cardFrom?: string
   cardTo?: string
-  transactionId?: string
   txHash?: string
   phone?: string
   bic?: string
   cro?: string
   pickupCode?: string
+  pickupPoint?: string
+  railKey?: string
+  operator?: string
 }): { text: string; p: number }[] {
-  const out: { text: string; p: number }[] = [
-    { text: s.sender.full, p: 0.94 },
-    { text: s.sender.family, p: 0.62 },
-    { text: s.sender.given, p: 0.38 },
-    { text: s.recipient.full, p: 0.96 },
-    { text: s.recipient.family, p: 0.7 },
-    { text: s.recipient.given, p: 0.42 },
-    { text: s.ibanFrom ?? '', p: 0.82 },
-    { text: s.ibanTo ?? '', p: 0.88 },
-    { text: s.ibanFromMasked ?? '', p: 0.55 },
-    { text: s.ibanToMasked ?? '', p: 0.6 },
-    { text: s.accountFrom ?? '', p: 0.8 },
-    { text: s.accountTo ?? '', p: 0.84 },
-    { text: s.walletFrom ?? '', p: 0.78 },
-    { text: s.walletTo ?? '', p: 0.8 },
-    { text: s.cardFrom ?? '', p: 0.72 },
-    { text: s.cardTo ?? '', p: 0.72 },
-    { text: s.transactionId ?? '', p: 0.48 },
-    { text: s.txHash ?? '', p: 0.52 },
-    { text: s.phone ?? '', p: 0.8 },
-    { text: s.bic ?? '', p: 0.45 },
-    { text: s.cro ?? '', p: 0.5 },
-    { text: s.pickupCode ?? '', p: 0.7 },
+  return [
+    ...expandNeedle(s.note ?? '', 1),
+    ...expandNeedle(s.transactionId ?? '', 1),
+    ...expandNeedle(s.sender.full, 1),
+    ...expandNeedle(s.recipient.full, 1),
+    ...expandNeedle(s.sender.family, 0.92),
+    ...expandNeedle(s.recipient.family, 0.94),
+    ...expandNeedle(s.sender.given, 0.8),
+    ...expandNeedle(s.recipient.given, 0.84),
+    ...expandNeedle(s.ibanFrom ?? '', 1),
+    ...expandNeedle(s.ibanTo ?? '', 1),
+    ...expandNeedle(s.ibanFromMasked ?? '', 1),
+    ...expandNeedle(s.ibanToMasked ?? '', 1),
+    ...expandNeedle(s.accountFrom ?? '', 1),
+    ...expandNeedle(s.accountTo ?? '', 1),
+    ...expandNeedle(s.walletFrom ?? '', 1),
+    ...expandNeedle(s.walletTo ?? '', 1),
+    ...expandNeedle(s.cardFrom ?? '', 1),
+    ...expandNeedle(s.cardTo ?? '', 1),
+    ...expandNeedle(s.txHash ?? '', 1),
+    ...expandNeedle(s.phone ?? '', 1),
+    ...expandNeedle(s.railKey ?? '', 1),
+    ...expandNeedle(s.pickupCode ?? '', 1),
+    ...expandNeedle(s.pickupPoint ?? '', 0.9),
+    ...expandNeedle(s.operator ?? '', 0.72),
+    ...expandNeedle(s.bic ?? '', 0.95),
+    ...expandNeedle(s.cro ?? '', 1),
   ]
-  return out.filter((n) => n.text.replace(/[•\s]/g, '').length >= 3)
 }
 
 function findNeedleRects(root: HTMLElement, needle: string): DOMRect[] {
   const hit: DOMRect[] = []
   const needleNorm = needle.replace(/\s+/g, ' ').trim()
   if (needleNorm.length < 3) return hit
+  const { left, right } = revealEnds(needleNorm)
+  const keepStart = left.length
+  const keepEnd = right.length
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const lower = needleNorm.toLowerCase()
   while (walker.nextNode()) {
@@ -275,10 +309,17 @@ function findNeedleRects(root: HTMLElement, needle: string): DOMRect[] {
     if (idx < 0) continue
     try {
       const range = document.createRange()
-      range.setStart(node, idx)
-      range.setEnd(node, Math.min(raw.length, idx + needleNorm.length))
+      const from = idx + keepStart
+      const to = Math.min(raw.length, idx + needleNorm.length - keepEnd)
+      if (to - from < 2) {
+        range.setStart(node, idx)
+        range.setEnd(node, Math.min(raw.length, idx + needleNorm.length))
+      } else {
+        range.setStart(node, from)
+        range.setEnd(node, to)
+      }
       const r = range.getBoundingClientRect()
-      if (r.width >= 10 && r.height >= 8) hit.push(r)
+      if (r.width >= 8 && r.height >= 7) hit.push(r)
     } catch {
       /* ignore broken ranges */
     }
@@ -323,36 +364,28 @@ export function paintPaymentRedactions(
   const boxes: { x: number; y: number; w: number; h: number }[] = []
 
   for (const n of needlesFromScenario(scenario)) {
-    if (rng() > n.p) continue
+    if (n.p < 1 && rng() > n.p) continue
     for (const r of findNeedleRects(root, n.text)) {
-      const padX = 4 + rng() * 14
-      const padY = 1 + rng() * 5
-      const trim = rng() > 0.55 ? rng() * r.width * 0.18 : 0
+      const padX = 1 + rng() * 3
+      const padY = 1 + rng() * 3.5
       boxes.push({
-        x: r.left - origin.left - padX + trim,
-        y: r.top - origin.top - padY + (rng() - 0.5) * 4,
-        w: Math.max(32, r.width + padX * 2 - trim * 2),
-        h: Math.max(13, r.height + padY * 2),
+        x: r.left - origin.left - padX,
+        y: r.top - origin.top - padY + (rng() - 0.5) * 3,
+        w: Math.max(28, r.width + padX * 2),
+        h: Math.max(12, r.height + padY * 2),
       })
     }
   }
 
   if (boxes.length < 2) {
     for (const r of randomBodyRects(root, rng, 2 + Math.floor(rng() * 2))) {
+      const keepL = Math.min(r.width * 0.2, 18)
+      const keepR = Math.min(r.width * 0.12, 10)
       boxes.push({
-        x: r.left - origin.left - 6,
+        x: r.left - origin.left + keepL,
         y: r.top - origin.top - 2,
-        w: r.width + 12,
+        w: Math.max(28, r.width - keepL - keepR),
         h: r.height + 6,
-      })
-    }
-  } else if (rng() > 0.55) {
-    for (const r of randomBodyRects(root, rng, rng() > 0.5 ? 1 : 2)) {
-      boxes.push({
-        x: r.left - origin.left - 8 + rng() * 6,
-        y: r.top - origin.top - 3,
-        w: r.width * (0.55 + rng() * 0.5) + 10,
-        h: r.height + 7,
       })
     }
   }
