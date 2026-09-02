@@ -1,6 +1,7 @@
 import { sampleEurAmount } from '../src/engine/amounts.ts'
 import { brandProfile } from '../src/engine/brands.ts'
 import { INSTITUTIONS } from '../src/engine/institutions.ts'
+import { sampleMerchantAmount } from '../src/engine/ledger.ts'
 import { convertFromEur, mathMatches } from '../src/engine/math.ts'
 import { mulberry32 } from '../src/engine/random.ts'
 import { createScenario } from '../src/engine/scenario.ts'
@@ -24,6 +25,28 @@ if (mid < 0.5 || mid > 0.75) throw new Error(`cluster ${mid}`)
 if (rare > 0.12) throw new Error(`rare ${rare}`)
 if (low < 0.08 || low > 0.3) throw new Error(`low ${low}`)
 if (amounts.some((a) => a < 100 || a > 4320)) throw new Error('range')
+
+{
+  const spendRng = mulberry32(99)
+  const checks: [string, number, number][] = [
+    ['Spotify', 6.99, 22.99],
+    ['Netflix', 7.99, 21.99],
+    ['Apple', 0.99, 25.95],
+    ['TIM', 4.99, 14.99],
+    ['Starbucks', 4.5, 13.9],
+    ['Uber', 8.2, 72],
+    ['Mercadona', 14, 96],
+    ['Amazon', 12.9, 186],
+    ['Enel', 48, 128],
+    ['Grab', 2.6, 14.8],
+  ]
+  for (const [label, min, max] of checks) {
+    for (let i = 0; i < 80; i++) {
+      const n = sampleMerchantAmount(spendRng, label)
+      if (n < min - 0.011 || n > max + 0.011) throw new Error(`spend ${label} ${n}`)
+    }
+  }
+}
 
 for (const institution of INSTITUTIONS) {
   for (const appearance of ['light', 'dark'] as const) {

@@ -1,6 +1,6 @@
 import type { LayoutId, LedgerEntry, LocaleId } from '../types.ts'
 import { merchantIcon } from './merchants.ts'
-import { chance, pick, randInt, type Rng } from './random.ts'
+import { chance, pick, pickWeighted, randFloat, randInt, type Rng } from './random.ts'
 
 const MERCHANTS: Record<LocaleId, { in: string[]; out: string[] }> = {
   en: {
@@ -95,17 +95,63 @@ const MERCHANTS: Record<LocaleId, { in: string[]; out: string[] }> = {
 
 const ACTIVITY_LAYOUTS: LayoutId[] = ['bank', 'hero', 'crypto', 'cards']
 
+const SPOTIFY_PLANS = [6.99, 11.99, 12.99, 17.99, 21.99, 22.99] as const
+const NETFLIX_PLANS = [7.99, 12.99, 13.99, 14.99, 18.99, 21.99] as const
+const APPLE_CHARGES = [0.99, 2.99, 4.99, 9.99, 11.99, 19.95, 25.95] as const
+const TIM_PLANS = [4.99, 9.99, 12.99, 14.99] as const
+
+function euros(rng: Rng, min: number, max: number): number {
+  return Math.round(randFloat(rng, min, max) * 100) / 100
+}
+
+function groceryAmount(rng: Rng): number {
+  const tier = pickWeighted(rng, [
+    { min: 14, max: 34, weight: 38 },
+    { min: 34, max: 82, weight: 52 },
+    { min: 82, max: 96, weight: 10 },
+  ])
+  return euros(rng, tier.min, tier.max)
+}
+
+function amazonAmount(rng: Rng): number {
+  const tier = pickWeighted(rng, [
+    { min: 12.9, max: 58, weight: 62 },
+    { min: 58, max: 128, weight: 28 },
+    { min: 128, max: 186, weight: 10 },
+  ])
+  return euros(rng, tier.min, tier.max)
+}
+
+export function sampleMerchantAmount(rng: Rng, label: string): number {
+  if (/spotify/i.test(label)) return pick(rng, SPOTIFY_PLANS)
+  if (/netflix/i.test(label)) return pick(rng, NETFLIX_PLANS)
+  if (/\bapple\b/i.test(label)) return pick(rng, APPLE_CHARGES)
+  if (/\btim\b/i.test(label)) return pick(rng, TIM_PLANS)
+  if (/enel/i.test(label)) return euros(rng, 48, 128)
+  if (/uber/i.test(label)) return chance(rng, 0.12) ? euros(rng, 48, 72) : euros(rng, 8.2, 34.5)
+  if (/grab/i.test(label)) return euros(rng, 2.6, 14.8)
+  if (/swiggy/i.test(label)) return euros(rng, 4.1, 16.4)
+  if (/starbucks/i.test(label)) return euros(rng, 4.5, 13.9)
+  if (/^bar /i.test(label)) return euros(rng, 2.2, 11.5)
+  if (/farmacia|pharmacy/i.test(label)) return euros(rng, 7.4, 38)
+  if (/sncf/i.test(label)) return euros(rng, 16, 89)
+  if (/shell|repsol|gas station/i.test(label)) return euros(rng, 38, 92)
+  if (/amazon/i.test(label)) return amazonAmount(rng)
+  if (/shopee/i.test(label)) return euros(rng, 6.4, 42)
+  if (/coupang/i.test(label)) return euros(rng, 10.5, 68)
+  if (/セブン/i.test(label)) return euros(rng, 3.2, 16.5)
+  if (/mercadona|conad|esselunga|carrefour|rewe|continente|migros|biedronka|grocery|пятёр|сільпо/i.test(label)) {
+    return groceryAmount(rng)
+  }
+  return euros(rng, 6.5, 38)
+}
+
 export function shouldShowActivity(rng: Rng, layoutId: LayoutId): boolean {
   if (!ACTIVITY_LAYOUTS.includes(layoutId)) return false
   return chance(rng, 1 / 8)
 }
 
-export function sampleLedger(
-  rng: Rng,
-  locale: LocaleId,
-  mainTimestamp: string,
-  mainAmount: number,
-): LedgerEntry[] {
+export function sampleLedger(rng: Rng, locale: LocaleId, mainTimestamp: string): LedgerEntry[] {
   const pool = MERCHANTS[locale] ?? MERCHANTS.en
   const count = randInt(rng, 2, 4)
   const mainMs = new Date(mainTimestamp).getTime()
@@ -122,14 +168,12 @@ export function sampleLedger(
     const daysAgo = randInt(rng, 1, 12)
     const hoursAgo = randInt(rng, 0, 23)
     const ts = new Date(mainMs - (daysAgo * 24 + hoursAgo) * 3600000)
-    const cap = Math.max(8, mainAmount * 0.65)
-    const amountEur = Math.round((randInt(rng, 4, Math.floor(cap)) + rng() * 5) * 100) / 100
 
     entries.push({
       id: `L${randInt(rng, 10000, 99999)}`,
       direction: 'out',
       label,
-      amountEur,
+      amountEur: sampleMerchantAmount(rng, label),
       timestamp: ts.toISOString(),
       icon: merchantIcon(label),
     })

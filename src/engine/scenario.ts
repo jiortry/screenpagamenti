@@ -259,7 +259,7 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   }
 
   if (shouldShowActivity(rng, layoutId)) {
-    const ledger = sampleLedger(rng, locale.id, scenario.timestamp, amountEur)
+    const ledger = sampleLedger(rng, locale.id, scenario.timestamp)
     scenario.recentActivity = ledger
     scenario.accountBalance = accountBalance(seed, amountEur, ledger, true)
     scenario.visual.showBalance = true
