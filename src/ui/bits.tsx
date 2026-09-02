@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { Appearance, Institution, LedgerEntry, Scenario, TxStatus } from '../types.ts'
 import type { ThemeTokens } from '../engine/themes.ts'
 import { brandProfile, brandSkin, type MockupSkin } from '../engine/brands.ts'
-import { formatFiat, formatRelativeActivity } from '../engine/format.ts'
+import { formatLocal, formatRelativeActivity } from '../engine/format.ts'
 import { t, tf } from '../i18n/catalog.ts'
 
 export function statusTint(status: TxStatus, theme: ThemeTokens): string {
@@ -191,7 +191,7 @@ function ActivityRow({
       </div>
       <div style={{ fontWeight: 800, fontSize: '0.86em', color: tint, whiteSpace: 'nowrap' }}>
         {incoming ? '+' : '−'}
-        {formatFiat(entry.amountEur, 'EUR', s.bcp47)}
+        {formatLocal(s, entry.amountEur)}
       </div>
     </div>
   )

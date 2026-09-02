@@ -9,6 +9,7 @@ import type {
   TxStatus,
   VisualVars,
   Appearance,
+  DisplayCurrency,
 } from '../types.ts'
 import { sampleEurAmount, sampleFeeEur } from './amounts.ts'
 import { sampleDevice, sampleFontScale } from './devices.ts'
@@ -125,6 +126,11 @@ function makeConversion(
   }
 }
 
+function perEur(currency: DisplayCurrency, rates: RateBook): number {
+  if (currency === 'EUR') return 1
+  return rates.fiatPerEur[currency]
+}
+
 function etaFor(locale: Scenario['locale']): string {
   return tf(locale, 'etaInstant', 0)
 }
@@ -199,6 +205,8 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     locale: locale.id,
     dir: locale.dir,
     bcp47: locale.bcp47,
+    displayCurrency: locale.currency,
+    displayPerEur: perEur(locale.currency, rates),
     device,
     appearance,
     fontScale,

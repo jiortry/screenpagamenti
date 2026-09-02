@@ -11,7 +11,7 @@ import {
   type MockupSkin,
 } from '../engine/brands.ts'
 import { isCryptoQuote } from '../engine/math.ts'
-import { formatDateTime, formatFiat, formatQuote } from '../engine/format.ts'
+import { formatDateTime, formatLocal, formatQuote } from '../engine/format.ts'
 import { CRYPTO_LOGOS, carrierLogo } from '../engine/logos.ts'
 import { scriptFont, themeTokens, type ThemeTokens } from '../engine/themes.ts'
 import { methodKey, statusKey, t, titleKey } from '../i18n/catalog.ts'
@@ -249,7 +249,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
         </div>
         {withBalance && s.visual.showBalance && (
           <div style={{ color: theme.muted, fontSize: '0.72em', fontWeight: 500 }}>
-            {t(loc, 'available')} {formatFiat(bal, 'EUR', s.bcp47)}
+            {t(loc, 'available')} {formatLocal(s, bal)}
           </div>
         )}
       </div>
@@ -280,12 +280,12 @@ function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolea
   const c = s.conversion
   const primary = primaryCrypto && isCryptoQuote(c.quote_currency)
     ? formatQuote(c.converted_amount, c.quote_currency, s.bcp47)
-    : formatFiat(s.amountEur, 'EUR', s.bcp47)
+    : formatLocal(s, s.amountEur)
   const secondary = primaryCrypto && isCryptoQuote(c.quote_currency)
-    ? formatFiat(s.amountEur, 'EUR', s.bcp47)
-    : c.quote_currency !== 'EUR'
+    ? formatLocal(s, s.amountEur)
+    : c.quote_currency !== 'EUR' && c.quote_currency !== s.displayCurrency
       ? formatQuote(c.converted_amount, c.quote_currency, s.bcp47)
-      : s.secondary
+      : s.secondary && s.secondary.quote_currency !== s.displayCurrency
         ? formatQuote(s.secondary.converted_amount, s.secondary.quote_currency, s.bcp47)
         : null
   const px = Math.round(
@@ -365,7 +365,7 @@ function HeroLayout({ s }: { s: Scenario }) {
   rows.push([t(loc, 'date'), formatDateTime(s.timestamp, s.bcp47)])
   rows.push([t(loc, 'reference'), s.transactionId, true])
   if (details === 'full' && !m.short) rows.push([t(loc, 'note'), s.note])
-  if (details !== 'min' && s.feeEur > 0) rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
+  if (details !== 'min' && s.feeEur > 0) rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
   return (
     <>
       <Header s={s} withBalance={ui.chrome === 'toolbar'} />
@@ -400,7 +400,7 @@ function CryptoLayout({ s }: { s: Scenario }) {
   const rows: Array<[string, string, boolean?]> = []
   if (details !== 'min') rows.push([t(loc, 'from'), s.walletFrom ?? s.sender.full, true])
   rows.push([t(loc, 'to'), s.walletTo ?? s.recipient.full, true])
-  if (details !== 'min') rows.push([t(loc, 'networkFee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
+  if (details !== 'min') rows.push([t(loc, 'networkFee'), formatLocal(s, s.feeEur)])
   if (details === 'full' && s.conversion.show_rate) rows.push([t(loc, 'rate'), s.conversion.display_rate])
   if (details === 'full' && !m.short) rows.push([t(loc, 'confirmations'), conf])
   rows.push([t(loc, 'reference'), s.transactionId, true])
@@ -442,10 +442,10 @@ function BankLayout({ s }: { s: Scenario }) {
   if (details === 'full' && !m.short) rows.push([t(loc, 'bank'), s.institution.name])
   rows.push([t(loc, 'date'), formatDateTime(s.timestamp, s.bcp47)])
   if (details === 'full') {
-    rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
-    rows.push([t(loc, 'total'), formatFiat(s.totalEur, 'EUR', s.bcp47)])
+    rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
+    rows.push([t(loc, 'total'), formatLocal(s, s.totalEur)])
   } else if (details === 'lite' && s.feeEur > 0) {
-    rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
+    rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
   }
   if (details === 'full' && s.conversion.show_rate && !m.short) {
     rows.push([t(loc, 'rate'), s.conversion.display_rate])
@@ -486,9 +486,9 @@ function RemitLayout({ s }: { s: Scenario }) {
   const { theme, ui, m, details, loc } = skinOf(s)
   const tint = statusTint(s.status, theme)
   const rows: Array<[string, string, boolean?]> = []
-  if (details !== 'min') rows.push([t(loc, 'youSent'), formatFiat(s.amountEur, 'EUR', s.bcp47)])
+  if (details !== 'min') rows.push([t(loc, 'youSent'), formatLocal(s, s.amountEur)])
   rows.push([t(loc, 'youReceived'), formatQuote(s.conversion.converted_amount, s.conversion.quote_currency, s.bcp47)])
-  if (details === 'full') rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
+  if (details === 'full') rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
   if (details !== 'min' && s.conversion.show_rate) rows.push([t(loc, 'rate'), s.conversion.display_rate])
   if (details === 'full' && !m.short) {
     rows.push([t(loc, 'pickupCode'), s.pickupCode ?? s.transactionId, true])
@@ -529,10 +529,10 @@ function TopupLayout({ s }: { s: Scenario }) {
   if (details !== 'min') rows.push([t(loc, 'operator'), s.operator ?? '—'])
   rows.push([t(loc, 'phone'), s.phone ?? '—', true])
   if (details === 'full') {
-    rows.push([t(loc, 'amount'), formatFiat(s.amountEur, 'EUR', s.bcp47)])
-    rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
+    rows.push([t(loc, 'amount'), formatLocal(s, s.amountEur)])
+    rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
   }
-  if (details !== 'min') rows.push([t(loc, 'total'), formatFiat(s.totalEur, 'EUR', s.bcp47)])
+  if (details !== 'min') rows.push([t(loc, 'total'), formatLocal(s, s.totalEur)])
   rows.push([t(loc, 'date'), formatDateTime(s.timestamp, s.bcp47)])
   rows.push([t(loc, 'reference'), s.transactionId, true])
   if (details === 'full' && !m.short) rows.push([t(loc, 'note'), s.note])
@@ -611,8 +611,8 @@ function CardsLayout({ s }: { s: Scenario }) {
   const tint = statusTint(s.status, theme)
   const rows: Array<[string, string, boolean?]> = []
   if (details === 'full') rows.push([t(loc, 'method'), t(loc, 'methodCard')])
-  if (details === 'full') rows.push([t(loc, 'fee'), formatFiat(s.feeEur, 'EUR', s.bcp47)])
-  if (details !== 'min') rows.push([t(loc, 'total'), formatFiat(s.totalEur, 'EUR', s.bcp47)])
+  if (details === 'full') rows.push([t(loc, 'fee'), formatLocal(s, s.feeEur)])
+  if (details !== 'min') rows.push([t(loc, 'total'), formatLocal(s, s.totalEur)])
   rows.push([t(loc, 'date'), formatDateTime(s.timestamp, s.bcp47)])
   rows.push([t(loc, 'reference'), s.transactionId, true])
   if (details === 'full' && !m.short) rows.push([t(loc, 'note'), s.note])

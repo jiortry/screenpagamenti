@@ -65,6 +65,32 @@ export type FiatQuote = 'USD' | 'GBP' | 'CHF' | 'EUR'
 export type CryptoQuote = 'BTC' | 'ETH' | 'TON' | 'XMR' | 'USDT'
 export type QuoteCurrency = FiatQuote | CryptoQuote
 
+export const DISPLAY_CURRENCIES = [
+  'EUR',
+  'USD',
+  'GBP',
+  'CHF',
+  'BRL',
+  'RUB',
+  'SAR',
+  'INR',
+  'IDR',
+  'TRY',
+  'VND',
+  'PLN',
+  'UAH',
+  'KRW',
+  'JPY',
+  'PHP',
+  'THB',
+  'IRR',
+  'BDT',
+  'PKR',
+  'UZS',
+] as const
+
+export type DisplayCurrency = (typeof DISPLAY_CURRENCIES)[number]
+
 export type BankRegion =
   | 'IT'
   | 'US'
@@ -113,7 +139,7 @@ export type RateBook = {
   timestamp: string
   source: string
   eurPerCrypto: Record<CryptoQuote, number>
-  fiatPerEur: Record<Exclude<FiatQuote, 'EUR'>, number>
+  fiatPerEur: Record<Exclude<DisplayCurrency, 'EUR'>, number>
 }
 
 export type RateError = {
@@ -194,6 +220,8 @@ export type Scenario = {
   locale: LocaleId
   dir: TextDir
   bcp47: string
+  displayCurrency: DisplayCurrency
+  displayPerEur: number
   device: DeviceSpec
   appearance: Appearance
   fontScale: number

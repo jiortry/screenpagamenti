@@ -1,12 +1,32 @@
-import type { QuoteCurrency } from '../types.ts'
+import type { QuoteCurrency, Scenario } from '../types.ts'
+
+const ZERO_DECIMAL = new Set(['JPY', 'KRW', 'VND', 'IDR', 'UZS', 'IRR'])
+
+export function fiatDigits(currency: string): number {
+  return ZERO_DECIMAL.has(currency) ? 0 : 2
+}
+
+export function fromEurAmount(amountEur: number, currency: string, perEur: number): number {
+  const rate = currency === 'EUR' ? 1 : perEur
+  const f = 10 ** fiatDigits(currency)
+  return Math.round(amountEur * rate * f) / f
+}
 
 export function formatFiat(amount: number, currency: string, locale: string): string {
+  const digits = fiatDigits(currency)
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(amount)
+}
+
+export function formatLocal(
+  s: Pick<Scenario, 'displayCurrency' | 'displayPerEur' | 'bcp47'>,
+  amountEur: number,
+): string {
+  return formatFiat(fromEurAmount(amountEur, s.displayCurrency, s.displayPerEur), s.displayCurrency, s.bcp47)
 }
 
 export function formatCrypto(amount: number, symbol: string, locale: string): string {

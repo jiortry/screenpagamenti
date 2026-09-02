@@ -1,4 +1,56 @@
-import type { CryptoQuote, RateBook, RateError } from '../types.ts'
+import type { CryptoQuote, DisplayCurrency, RateBook, RateError } from '../types.ts'
+import { DISPLAY_CURRENCIES } from '../types.ts'
+
+const FIAT_CODES = DISPLAY_CURRENCIES.filter(
+  (c): c is Exclude<DisplayCurrency, 'EUR'> => c !== 'EUR',
+)
+
+/** ECB / market mid as of early Sept 2026 — used when a live feed omits a code. */
+export const FALLBACK_FIAT_PER_EUR: Record<Exclude<DisplayCurrency, 'EUR'>, number> = {
+  USD: 1.159,
+  GBP: 0.8566,
+  CHF: 0.9394,
+  BRL: 6.0255,
+  RUB: 98.4,
+  SAR: 4.347,
+  INR: 110.05,
+  IDR: 20566,
+  TRY: 55.95,
+  VND: 30220,
+  PLN: 4.3313,
+  UAH: 51.65,
+  KRW: 1593.17,
+  JPY: 185.63,
+  PHP: 72.355,
+  THB: 38.554,
+  IRR: 48800,
+  BDT: 142.8,
+  PKR: 322,
+  UZS: 14720,
+}
+
+function readFiats(src: Record<string, number> | undefined, lower: boolean): Partial<Record<Exclude<DisplayCurrency, 'EUR'>, number>> {
+  if (!src) return {}
+  const out: Partial<Record<Exclude<DisplayCurrency, 'EUR'>, number>> = {}
+  for (const code of FIAT_CODES) {
+    const n = src[lower ? code.toLowerCase() : code]
+    if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[code] = n
+  }
+  return out
+}
+
+function completeFiats(
+  ...partials: Array<Partial<Record<Exclude<DisplayCurrency, 'EUR'>, number>>>
+): Record<Exclude<DisplayCurrency, 'EUR'>, number> {
+  const out = { ...FALLBACK_FIAT_PER_EUR }
+  for (const part of partials) {
+    for (const code of FIAT_CODES) {
+      const n = part[code]
+      if (typeof n === 'number' && n > 0) out[code] = n
+    }
+  }
+  return out
+}
 
 const CRYPTO_IDS: Record<CryptoQuote, string> = {
   BTC: 'bitcoin',
@@ -66,18 +118,16 @@ async function fromCoinGecko(base: string): Promise<RateBook> {
     timestamp: isoFromUnix(btc.last_updated_at),
     source: 'CoinGecko',
     eurPerCrypto,
-    fiatPerEur: {
+    fiatPerEur: completeFiats({
       USD: usd / usdtEur,
       GBP: gbp / usdtEur,
       CHF: chf / usdtEur,
-    },
+    }),
   }
 }
 
 async function fromErApi(base: string): Promise<{
-  USD: number
-  GBP: number
-  CHF: number
+  fiats: Partial<Record<Exclude<DisplayCurrency, 'EUR'>, number>>
   timestamp: string
 }> {
   const data = (await getJson(`${base}/v6/latest/EUR`)) as {
@@ -87,9 +137,7 @@ async function fromErApi(base: string): Promise<{
   }
   if (data.result !== 'success' || !data.rates) throw new Error('ER-API failed')
   return {
-    USD: requirePositive(data.rates.USD, 'USD'),
-    GBP: requirePositive(data.rates.GBP, 'GBP'),
-    CHF: requirePositive(data.rates.CHF, 'CHF'),
+    fiats: readFiats(data.rates, false),
     timestamp: isoFromUnix(data.time_last_update_unix),
   }
 }
@@ -119,11 +167,7 @@ async function fromCurrencyJsDelivr(base: string): Promise<RateBook> {
       XMR: 1 / perEurToCoin.XMR,
       USDT: 1 / perEurToCoin.USDT,
     },
-    fiatPerEur: {
-      USD: requirePositive(eur.usd, 'usd'),
-      GBP: requirePositive(eur.gbp, 'gbp'),
-      CHF: requirePositive(eur.chf, 'chf'),
-    },
+    fiatPerEur: completeFiats(readFiats(eur, true)),
   }
 }
 
@@ -154,7 +198,7 @@ export async function loadRates(): Promise<RateBook | RateError> {
           ...cryptoBook,
           source: `${cryptoBook.source} + ExchangeRate-API`,
           timestamp: cryptoBook.timestamp,
-          fiatPerEur: { USD: fiat.USD, GBP: fiat.GBP, CHF: fiat.CHF },
+          fiatPerEur: completeFiats(cryptoBook.fiatPerEur, fiat.fiats),
         }
       } catch {
         /* keep derived tether cross */

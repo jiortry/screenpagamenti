@@ -1,7 +1,7 @@
 import type { RateBook, Scenario } from '../types.ts'
 import { CANCEL_REASONS, CATALOG, FAIL_REASONS, NOTES } from '../i18n/catalog.ts'
 import { mathMatches } from './math.ts'
-import { RTL_LOCALES } from './languages.ts'
+import { LOCALES, RTL_LOCALES } from './languages.ts'
 
 export type QcIssue = { code: string; detail: string }
 
@@ -55,6 +55,17 @@ export function qcScenario(s: Scenario, rates: RateBook): QcResult {
   }
   if (s.recentActivity?.some((e) => e.direction === 'in')) {
     issues.push({ code: 'direction', detail: 'Recent activity must be outgoing only' })
+  }
+  const localeMeta = LOCALES.find((l) => l.id === s.locale)
+  if (localeMeta && s.displayCurrency !== localeMeta.currency) {
+    issues.push({
+      code: 'fx',
+      detail: `Display currency ${s.displayCurrency} does not match locale ${s.locale}`,
+    })
+  }
+  const expectFx = s.displayCurrency === 'EUR' ? 1 : rates.fiatPerEur[s.displayCurrency]
+  if (!(expectFx > 0) || Math.abs(s.displayPerEur - expectFx) / expectFx > 0.001) {
+    issues.push({ code: 'fx', detail: `Display FX mismatch ${s.displayCurrency} ${s.displayPerEur}` })
   }
 
   const pack = CATALOG[s.locale]

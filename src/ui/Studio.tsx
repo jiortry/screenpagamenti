@@ -320,6 +320,8 @@ export function Studio() {
             synthetic: true,
             transactionId: scenario.transactionId,
             locale: scenario.locale,
+            displayCurrency: scenario.displayCurrency,
+            displayPerEur: scenario.displayPerEur,
             category: scenario.category,
             status: scenario.status,
             amountEur: scenario.amountEur,

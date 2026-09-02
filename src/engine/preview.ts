@@ -79,6 +79,8 @@ export function previewScenario(
     locale: 'en',
     dir: 'ltr',
     bcp47: 'en-US',
+    displayCurrency: 'USD',
+    displayPerEur: rates.fiatPerEur.USD,
     device,
     appearance,
     fontScale: 1,
