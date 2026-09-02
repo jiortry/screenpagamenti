@@ -59,7 +59,7 @@ export type ChatMessage = {
   voiceDuration?: string
   voiceProgress?: number
   photo?: string
-  photoAspect?: 'land' | 'port' | 'square'
+  photoAspect?: 'land' | 'port' | 'square' | 'screen'
   sticker?: string
   status?: MsgStatus
   reactions?: { emoji: string; count: number }[]
@@ -87,6 +87,7 @@ export type ChatScenario = {
   muted: boolean
   pinned?: string
   timestamp: string
+  redactNames?: boolean
   battery: number
   clock: string
   signal: number

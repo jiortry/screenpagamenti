@@ -216,8 +216,8 @@ button:not(:disabled):hover {
 
 .mode-nav button {
   flex: 1;
-  font-size: 12px;
-  padding: 7px 8px;
+  font-size: 11px;
+  padding: 7px 6px;
 }
 
 .mode-nav button.on {

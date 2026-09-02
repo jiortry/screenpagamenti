@@ -21,15 +21,18 @@ import {
   TgVideo,
 } from './icons.tsx'
 import { ChatWallpaper } from './wallpaper.tsx'
+import { RedactedName } from './BrushRedact.tsx'
 
 function Avatar({
   peer,
   size,
   online,
+  hideInitials,
 }: {
   peer: ChatPeer
   size: number
   online?: boolean
+  hideInitials?: boolean
 }) {
   const style: CSSProperties = {
     width: size,
@@ -51,7 +54,7 @@ function Avatar({
       {peer.avatar ? (
         <img src={peer.avatar} alt="" width={size} height={size} style={{ ...style, display: 'block' }} />
       ) : (
-        <span style={style}>{peer.initials}</span>
+        <span style={style}>{hideInitials ? '' : peer.initials}</span>
       )}
       {online && (
         <span
@@ -170,16 +173,37 @@ function BubbleShell({
   )
 }
 
+function iHash(id: string): number {
+  let h = 2166136261
+  for (let i = 0; i < id.length; i++) h ^= id.charCodeAt(i) * (i + 1)
+  return h >>> 0
+}
+
+function paintCensor(text: string, seed: number) {
+  const bits = text.split(/(██+)/)
+  return bits.map((bit, i) =>
+    bit.startsWith('██') ? (
+      <RedactedName key={i} name={'xxxxxx'.slice(0, Math.max(4, bit.length + 2))} seed={seed + i * 17} fontSize={15} />
+    ) : (
+      <span key={i}>{bit}</span>
+    ),
+  )
+}
+
 function TextBody({
   m,
   skin,
   mine,
   ui,
+  redact,
+  seed,
 }: {
   m: ChatMessage
   skin: TgSkin
   mine: boolean
   ui: ReturnType<typeof chatUi>
+  redact?: boolean
+  seed: number
 }) {
   return (
     <>
@@ -201,15 +225,17 @@ function TextBody({
         >
           <span style={{ width: 2.5, borderRadius: 2, background: m.reply.color, flexShrink: 0 }} />
           <span style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 650, color: m.reply.color, lineHeight: 1.15 }}>{m.reply.author}</div>
+            <div style={{ fontSize: 13, fontWeight: 650, color: m.reply.color, lineHeight: 1.15 }}>
+              {redact ? <RedactedName name={m.reply.author} seed={seed ^ 0x55} fontSize={13} /> : m.reply.author}
+            </div>
             <div style={{ fontSize: 13, opacity: 0.78, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
-              {m.reply.text}
+              {redact ? paintCensor(m.reply.text, seed + 3) : m.reply.text}
             </div>
           </span>
         </div>
       )}
       <span style={{ fontSize: skin.platform === 'ios' ? 17 : 16, lineHeight: 1.28, wordBreak: 'break-word', color: mine ? skin.outFg : skin.inFg }}>
-        {m.text}
+        {redact ? paintCensor(m.text ?? '', seed) : m.text}
         <span style={{ display: 'inline-block', width: m.status ? 54 : 36, height: 11 }} />
       </span>
       {m.link && (
@@ -279,6 +305,7 @@ function VoiceBody({ m, skin, mine, editedLabel }: { m: ChatMessage; skin: TgSki
 
 function photoSize(deviceWidth: number, aspect: ChatMessage['photoAspect'] = 'land') {
   const w = Math.round(Math.min(deviceWidth * 0.88, deviceWidth - 12))
+  if (aspect === 'screen') return { w, h: Math.round(w * 1.62) }
   if (aspect === 'port') return { w, h: Math.round(w * 1.32) }
   if (aspect === 'square') return { w, h: w }
   return { w, h: Math.round(w * 0.82) }
@@ -308,7 +335,7 @@ function PhotoBody({
           height: h,
           maxWidth: '100%',
           objectFit: 'cover',
-          objectPosition: 'center',
+          objectPosition: m.photoAspect === 'screen' ? 'top center' : 'center',
           borderRadius: radius,
           boxShadow: '0 1px 2px rgba(0,0,0,0.18)',
         }}
@@ -458,12 +485,14 @@ function MessageRow({
     >
       {!mine && s.kind === 'group' && (
         <span style={{ width: 32, alignSelf: 'flex-end' }}>
-          {showAvatar ? <Avatar peer={peer} size={32} /> : null}
+          {showAvatar ? <Avatar peer={peer} size={32} hideInitials={s.redactNames} /> : null}
         </span>
       )}
       <div style={{ maxWidth: m.kind === 'photo' ? '96%' : '82%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
         {showName && !mine && s.kind === 'group' && (
-          <div style={{ fontSize: 13, fontWeight: 650, color: peer.color, padding: '0 10px 2px' }}>{peer.name}</div>
+          <div style={{ fontSize: 13, fontWeight: 650, color: peer.color, padding: '0 10px 2px' }}>
+            {s.redactNames ? <RedactedName name={peer.name} seed={s.seed ^ 0x91} fontSize={13} /> : peer.name}
+          </div>
         )}
         <BubbleShell mine={mine} skin={skin} tail={tail} photo={m.kind === 'photo'}>
           {m.kind === 'voice' && <VoiceBody m={m} skin={skin} mine={mine} editedLabel={ui.edited} />}
@@ -475,7 +504,9 @@ function MessageRow({
               width={s.device.width - (s.kind === 'group' && !mine ? 42 : 8)}
             />
           )}
-          {m.kind === 'text' && <TextBody m={m} skin={skin} mine={mine} ui={ui} />}
+          {m.kind === 'text' && (
+            <TextBody m={m} skin={skin} mine={mine} ui={ui} redact={s.redactNames} seed={s.seed + iHash(m.id)} />
+          )}
           {m.reactions && <Reactions items={m.reactions} />}
         </BubbleShell>
       </div>
@@ -505,10 +536,14 @@ function Header({ s, skin }: { s: ChatScenario; skin: TgSkin }) {
       <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: ios ? skin.accent : skin.headerFg, minWidth: 28 }}>
         <TgBack color={ios ? skin.accent : skin.headerFg} android={!ios} />
       </span>
-      <Avatar peer={s.peer} size={ios ? 40 : 44} online={s.kind === 'dm' && s.peer.online} />
+      <Avatar peer={s.peer} size={ios ? 40 : 44} online={s.kind === 'dm' && s.peer.online} hideInitials={s.redactNames} />
       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 650, fontSize: ios ? 16 : 17 }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.peer.name}</span>
+          {s.redactNames ? (
+            <RedactedName name={s.peer.name} seed={s.seed} fontSize={ios ? 16 : 17} />
+          ) : (
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.peer.name}</span>
+          )}
           {s.peer.verified && <TgVerified color={skin.accent} />}
           {s.muted && <TgMute color={skin.headerSub} />}
         </div>
