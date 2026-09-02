@@ -1,13 +1,16 @@
 import type { Scenario } from '../types.ts'
 import { isCryptoQuote } from '../engine/math.ts'
 import { formatDateTime, formatFiat, formatQuote } from '../engine/format.ts'
+import { CRYPTO_LOGOS, carrierLogo } from '../engine/logos.ts'
 import { scriptFont, themeTokens } from '../engine/themes.ts'
 import { methodKey, statusKey, t, titleKey } from '../i18n/catalog.ts'
 import {
   Actions,
+  AppLogo,
   backgroundStyle,
   CardFace,
   Chip,
+  CryptoLogo,
   Monogram,
   Row,
   statusTint,
@@ -34,17 +37,10 @@ function WarnGlyph({ color }: { color: string }) {
   )
 }
 
-function CoinGlyph({ kind, color }: { kind: string; color: string }) {
-  const letter =
-    kind.includes('btc') ? 'B' : kind.includes('eth') ? 'Ξ' : kind.includes('ton') ? 'T' : kind.includes('xmr') ? 'X' : '₮'
-  return (
-    <svg width="46" height="46" viewBox="0 0 46 46">
-      <circle cx="23" cy="23" r="21" fill="none" stroke={color} strokeWidth="2" />
-      <text x="23" y="28" textAnchor="middle" fontSize="16" fontWeight="700" fill={color}>
-        {letter}
-      </text>
-    </svg>
-  )
+function CoinGlyph({ kind }: { kind: string }) {
+  const coin =
+    kind.includes('btc') ? 'BTC' : kind.includes('eth') ? 'ETH' : kind.includes('ton') ? 'TON' : kind.includes('xmr') ? 'XMR' : 'USDT'
+  return <CryptoLogo src={CRYPTO_LOGOS[coin]} alt={coin} />
 }
 
 export function PaymentScreen({ s }: { s: Scenario }) {
@@ -123,7 +119,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Monogram letters={s.institution.monogram} theme={theme} />
+        <AppLogo src={s.institution.logo} alt={s.institution.name} />
         <div>
           <div style={{ fontWeight: 800, fontSize: '0.95em' }}>{s.institution.name}</div>
           {withBalance && s.visual.showBalance && (
@@ -228,7 +224,7 @@ function CryptoLayout({ s }: { s: Scenario }) {
     <>
       <Header s={s} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: s.visual.cardOffset }}>
-        <CoinGlyph kind={s.category} color={theme.accent2} />
+        <CoinGlyph kind={s.category} />
         <div>
           <Chip theme={theme}>{s.networkName}</Chip>
           <div style={{ fontWeight: 800, marginTop: 6 }}>{t(loc, titleKey(s.status))}</div>
@@ -348,7 +344,12 @@ function TopupLayout({ s }: { s: Scenario }) {
     <>
       <Header s={s} withBalance />
       <div style={{ textAlign: 'center', marginTop: s.visual.cardOffset }}>
-        <Chip theme={theme}>{s.operator}</Chip>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+          {s.operator && carrierLogo(s.operator) && (
+            <AppLogo src={carrierLogo(s.operator)!} alt={s.operator} size={40} />
+          )}
+          <Chip theme={theme}>{s.operator}</Chip>
+        </div>
         <div style={{ fontSize: '1.15em', fontWeight: 800, marginTop: 10 }}>{s.phone}</div>
       </div>
       <AmountBlock s={s} />
@@ -415,9 +416,9 @@ function CardsLayout({ s }: { s: Scenario }) {
     <>
       <Header s={s} withBalance />
       <div style={{ display: 'grid', gap: 10, marginTop: s.visual.cardOffset }}>
-        <CardFace mask={s.cardFrom ?? '•••• 0000'} name={s.sender.full} theme={theme} tone="from" />
+        <CardFace mask={s.cardFrom ?? '•••• 0000'} name={s.sender.full} theme={theme} tone="from" brand={s.institution.logo} />
         <div style={{ textAlign: 'center', color: theme.muted, fontWeight: 700, fontSize: '0.85em' }}>↓</div>
-        <CardFace mask={s.cardTo ?? '•••• 0000'} name={s.recipient.full} theme={theme} tone="to" />
+        <CardFace mask={s.cardTo ?? '•••• 0000'} name={s.recipient.full} theme={theme} tone="to" brand={s.institution.logo} />
       </div>
       <AmountBlock s={s} />
       <div style={{ background: theme.surface, borderRadius: theme.radius + 4, padding: 12 }}>

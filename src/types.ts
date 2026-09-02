@@ -172,7 +172,7 @@ export type Institution = {
   short: string
   region: BankRegion
   kind: 'bank' | 'wallet' | 'p2p' | 'remit' | 'crypto' | 'telco' | 'cash' | 'cards'
-  monogram: string
+  logo: string
 }
 
 export type Scenario = {

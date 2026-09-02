@@ -2,40 +2,62 @@ import type { BankRegion, Institution, PaymentCategory } from '../types.ts'
 import { pick, type Rng } from './random.ts'
 
 export const INSTITUTIONS: Institution[] = [
-  { id: 'limenia', name: 'Banca Limenia', short: 'Limenia', region: 'IT', kind: 'bank', monogram: 'BL' },
-  { id: 'valtora', name: 'Credito Valtora', short: 'Valtora', region: 'IT', kind: 'bank', monogram: 'CV' },
-  { id: 'nortesca', name: 'Cassa Nortesca', short: 'Nortesca', region: 'IT', kind: 'bank', monogram: 'CN' },
-  { id: 'harborline', name: 'Harborline Bank', short: 'Harborline', region: 'US', kind: 'bank', monogram: 'HB' },
-  { id: 'northridge', name: 'Northridge Federal', short: 'Northridge', region: 'US', kind: 'bank', monogram: 'NF' },
-  { id: 'cedarway', name: 'Cedarway Mutual', short: 'Cedarway', region: 'US', kind: 'bank', monogram: 'CM' },
-  { id: 'nordhaven', name: 'Nordhaven Bank', short: 'Nordhaven', region: 'EU', kind: 'bank', monogram: 'NH' },
-  { id: 'elbwacht', name: 'Elbwacht Bank', short: 'Elbwacht', region: 'DE', kind: 'bank', monogram: 'EB' },
-  { id: 'rheinwald', name: 'Rheinwald Kasse', short: 'Rheinwald', region: 'DE', kind: 'bank', monogram: 'RK' },
-  { id: 'celeste', name: 'Banque Céleste', short: 'Céleste', region: 'FR', kind: 'bank', monogram: 'BC' },
-  { id: 'lyre', name: 'Crédit du Lyre', short: 'Lyre', region: 'FR', kind: 'bank', monogram: 'CL' },
-  { id: 'dunarii', name: 'Banca Dunării V', short: 'Dunării', region: 'RO', kind: 'bank', monogram: 'BD' },
-  { id: 'orizont', name: 'Credit Orizont', short: 'Orizont', region: 'RO', kind: 'bank', monogram: 'CO' },
-  { id: 'thamesor', name: 'Thamesor Trust', short: 'Thamesor', region: 'GB', kind: 'bank', monogram: 'TT' },
-  { id: 'iberline', name: 'Iberline Caja', short: 'Iberline', region: 'ES', kind: 'bank', monogram: 'IC' },
-  { id: 'alpenor', name: 'Alpenor Banque', short: 'Alpenor', region: 'CH', kind: 'bank', monogram: 'AB' },
-  { id: 'okun', name: 'Okun Harbor Bank', short: 'Okun', region: 'AF', kind: 'bank', monogram: 'OH' },
-  { id: 'nilebridge', name: 'Nilebridge Ledger', short: 'Nilebridge', region: 'AF', kind: 'bank', monogram: 'NL' },
-  { id: 'savanna', name: 'Savanna Wire Bank', short: 'Savanna', region: 'AF', kind: 'bank', monogram: 'SW' },
-  { id: 'pebble', name: 'PebblePay', short: 'Pebble', region: 'INTL', kind: 'wallet', monogram: 'PP' },
-  { id: 'kinship', name: 'Kinship', short: 'Kinship', region: 'US', kind: 'p2p', monogram: 'KN' },
-  { id: 'foldcash', name: 'Fold Cash', short: 'Fold', region: 'US', kind: 'p2p', monogram: 'FC' },
-  { id: 'meridian', name: 'Meridian Wire', short: 'Meridian', region: 'INTL', kind: 'remit', monogram: 'MW' },
-  { id: 'corridor', name: 'Corridor Send', short: 'Corridor', region: 'INTL', kind: 'remit', monogram: 'CS' },
-  { id: 'quarry', name: 'Quarry Wallet', short: 'Quarry', region: 'INTL', kind: 'crypto', monogram: 'QW' },
-  { id: 'orbit', name: 'Orbit Vault', short: 'Orbit', region: 'INTL', kind: 'crypto', monogram: 'OV' },
-  { id: 'hexbar', name: 'Hexbar', short: 'Hexbar', region: 'INTL', kind: 'crypto', monogram: 'HX' },
-  { id: 'nexora', name: 'Nexora Mobile', short: 'Nexora', region: 'EU', kind: 'telco', monogram: 'NX' },
-  { id: 'voltsim', name: 'VoltSim', short: 'VoltSim', region: 'IT', kind: 'telco', monogram: 'VS' },
-  { id: 'aethertel', name: 'AetherTel', short: 'AetherTel', region: 'US', kind: 'telco', monogram: 'AT' },
-  { id: 'kivupick', name: 'Kivu Pickup', short: 'Kivu', region: 'AF', kind: 'cash', monogram: 'KP' },
-  { id: 'deskcash', name: 'DeskCash Point', short: 'DeskCash', region: 'EU', kind: 'cash', monogram: 'DC' },
-  { id: 'splitcard', name: 'Splitcard', short: 'Splitcard', region: 'EU', kind: 'cards', monogram: 'SC' },
-  { id: 'circuit', name: 'Circuit Debit', short: 'Circuit', region: 'US', kind: 'cards', monogram: 'CD' },
+  // Banche IT
+  { id: 'intesa-sanpaolo', name: 'Intesa Sanpaolo', short: 'Intesa', region: 'IT', kind: 'bank', logo: '/logos/intesa-sanpaolo.svg' },
+  { id: 'unicredit', name: 'UniCredit', short: 'UniCredit', region: 'IT', kind: 'bank', logo: '/logos/unicredit.svg' },
+  { id: 'fineco', name: 'Fineco', short: 'Fineco', region: 'IT', kind: 'bank', logo: '/logos/fineco.svg' },
+  // Banche US
+  { id: 'chase', name: 'Chase', short: 'Chase', region: 'US', kind: 'bank', logo: '/logos/chase.svg' },
+  { id: 'bank-of-america', name: 'Bank of America', short: 'BoA', region: 'US', kind: 'bank', logo: '/logos/bankofamerica.svg' },
+  { id: 'wells-fargo', name: 'Wells Fargo', short: 'Wells Fargo', region: 'US', kind: 'bank', logo: '/logos/wellsfargo.svg' },
+  // Banche EU
+  { id: 'revolut', name: 'Revolut', short: 'Revolut', region: 'EU', kind: 'bank', logo: '/logos/revolut.svg' },
+  { id: 'n26', name: 'N26', short: 'N26', region: 'EU', kind: 'bank', logo: '/logos/n26.svg' },
+  // Banche DE
+  { id: 'deutsche-bank', name: 'Deutsche Bank', short: 'Deutsche Bank', region: 'DE', kind: 'bank', logo: '/logos/deutschebank.svg' },
+  { id: 'commerzbank', name: 'Commerzbank', short: 'Commerzbank', region: 'DE', kind: 'bank', logo: '/logos/commerzbank.svg' },
+  // Banche FR
+  { id: 'bnp-paribas', name: 'BNP Paribas', short: 'BNP', region: 'FR', kind: 'bank', logo: '/logos/bnp-paribas.svg' },
+  { id: 'societe-generale', name: 'Société Générale', short: 'SocGen', region: 'FR', kind: 'bank', logo: '/logos/societe-generale.svg' },
+  // Banche RO
+  { id: 'bcr', name: 'BCR', short: 'BCR', region: 'RO', kind: 'bank', logo: '/logos/bcr.png' },
+  { id: 'brd', name: 'BRD', short: 'BRD', region: 'RO', kind: 'bank', logo: '/logos/brd.png' },
+  // Banche GB
+  { id: 'barclays', name: 'Barclays', short: 'Barclays', region: 'GB', kind: 'bank', logo: '/logos/barclays.svg' },
+  { id: 'hsbc', name: 'HSBC', short: 'HSBC', region: 'GB', kind: 'bank', logo: '/logos/hsbc.svg' },
+  // Banche ES
+  { id: 'santander', name: 'Santander', short: 'Santander', region: 'ES', kind: 'bank', logo: '/logos/santander.svg' },
+  { id: 'bbva', name: 'BBVA', short: 'BBVA', region: 'ES', kind: 'bank', logo: '/logos/bbva.svg' },
+  // Banche CH
+  { id: 'ubs', name: 'UBS', short: 'UBS', region: 'CH', kind: 'bank', logo: '/logos/ubs.png' },
+  // Banche AF
+  { id: 'standard-bank', name: 'Standard Bank', short: 'Standard Bank', region: 'AF', kind: 'bank', logo: '/logos/standard-bank.svg' },
+  { id: 'ecobank', name: 'Ecobank', short: 'Ecobank', region: 'AF', kind: 'bank', logo: '/logos/ecobank.png' },
+  // Wallet
+  { id: 'paypal', name: 'PayPal', short: 'PayPal', region: 'INTL', kind: 'wallet', logo: '/logos/paypal.svg' },
+  { id: 'apple-pay', name: 'Apple Pay', short: 'Apple Pay', region: 'INTL', kind: 'wallet', logo: '/logos/applepay.svg' },
+  { id: 'google-pay', name: 'Google Pay', short: 'Google Pay', region: 'INTL', kind: 'wallet', logo: '/logos/googlepay.svg' },
+  // P2P
+  { id: 'venmo', name: 'Venmo', short: 'Venmo', region: 'US', kind: 'p2p', logo: '/logos/venmo.svg' },
+  { id: 'cash-app', name: 'Cash App', short: 'Cash App', region: 'US', kind: 'p2p', logo: '/logos/cashapp.svg' },
+  // Remit
+  { id: 'wise', name: 'Wise', short: 'Wise', region: 'INTL', kind: 'remit', logo: '/logos/wise.svg' },
+  { id: 'western-union', name: 'Western Union', short: 'Western Union', region: 'INTL', kind: 'remit', logo: '/logos/westernunion.svg' },
+  { id: 'remitly', name: 'Remitly', short: 'Remitly', region: 'INTL', kind: 'remit', logo: '/logos/remitly.png' },
+  // Crypto exchange
+  { id: 'binance', name: 'Binance', short: 'Binance', region: 'INTL', kind: 'crypto', logo: '/logos/binance.svg' },
+  { id: 'coinbase', name: 'Coinbase', short: 'Coinbase', region: 'INTL', kind: 'crypto', logo: '/logos/coinbase.svg' },
+  { id: 'kraken', name: 'Kraken', short: 'Kraken', region: 'INTL', kind: 'crypto', logo: '/logos/kraken.svg' },
+  { id: 'crypto-com', name: 'Crypto.com', short: 'Crypto.com', region: 'INTL', kind: 'crypto', logo: '/logos/crypto-com.svg' },
+  // Telco
+  { id: 'tim', name: 'TIM', short: 'TIM', region: 'IT', kind: 'telco', logo: '/logos/tim.svg' },
+  { id: 'vodafone', name: 'Vodafone', short: 'Vodafone', region: 'EU', kind: 'telco', logo: '/logos/vodafone.svg' },
+  { id: 'orange', name: 'Orange', short: 'Orange', region: 'FR', kind: 'telco', logo: '/logos/orange.svg' },
+  // Cash
+  { id: 'moneygram', name: 'MoneyGram', short: 'MoneyGram', region: 'INTL', kind: 'cash', logo: '/logos/moneygram.svg' },
+  // Carte
+  { id: 'visa', name: 'Visa', short: 'Visa', region: 'INTL', kind: 'cards', logo: '/logos/visa.svg' },
+  { id: 'mastercard', name: 'Mastercard', short: 'Mastercard', region: 'INTL', kind: 'cards', logo: '/logos/mastercard.svg' },
 ]
 
 function kindFor(category: PaymentCategory): Institution['kind'] {
@@ -104,17 +126,17 @@ export function pickInstitution(
 
 export function pickupPoint(rng: Rng, region: BankRegion): string {
   const places: Record<BankRegion, string[]> = {
-    IT: ['Via Nox 14, Limenia', 'Piazza Valtora 3', 'Corso Sartela 88'],
-    US: ['Harborline Desk 12', 'Northridge Counter B', 'Cedarway Kiosk 4'],
-    EU: ['Nordhaven Desk 2', 'EU Corridor Point 9'],
-    DE: ['Elbwacht Schalter 3', 'Rheinwald Punkt 1'],
-    FR: ['Guichet Céleste 5', 'Lyre Point Relais 2'],
-    RO: ['Orizont Ghiseu 1', 'Dunării Punct 4'],
-    GB: ['Thamesor Desk 7', 'Wharf Counter 12'],
-    ES: ['Iberline Ventanilla 3'],
-    CH: ['Alpenor Guichet 1'],
-    AF: ['Okun Harbor Desk', 'Nilebridge Counter 2', 'Savanna Pickup 6'],
-    INTL: ['Meridian Desk 11', 'Corridor Point 8'],
+    IT: ['Filiale Intesa Sanpaolo, Via Roma 14', 'UniCredit, Piazza Duomo 3', 'Fineco, Corso Garibaldi 88'],
+    US: ['Chase Branch Desk 12', 'Bank of America Counter B', 'Wells Fargo Kiosk 4'],
+    EU: ['Revolut Point 2', 'N26 Service Desk 9'],
+    DE: ['Deutsche Bank Schalter 3', 'Commerzbank Punkt 1'],
+    FR: ['BNP Paribas Guichet 5', 'Société Générale Point Relais 2'],
+    RO: ['BCR Ghiseu 1', 'BRD Punct 4'],
+    GB: ['Barclays Desk 7', 'HSBC Counter 12'],
+    ES: ['Santander Ventanilla 3', 'BBVA Punto 6'],
+    CH: ['UBS Guichet 1'],
+    AF: ['Standard Bank Desk', 'Ecobank Counter 2', 'Western Union Pickup 6'],
+    INTL: ['Wise Desk 11', 'Western Union Point 8'],
   }
   return pick(rng, places[region])
 }

@@ -1,11 +1,12 @@
 # Synthetic payment screen generator
 
-Browser studio that builds **original** mobile finance mockups for UI, localization, and dataset work.
+Browser studio that builds realistic mobile finance mockups with **real app logos and brand names** (PayPal, Binance, Intesa Sanpaolo, Revolut, TIM, …) for UI, localization, and dataset work.
 
-It does **not** copy PayPal, Binance, or bank apps, and it does not use their logos. Status bars use real national mobile carriers (TIM, Verizon, Orange, MTN, …). Live EUR/crypto rates are required; if they cannot be fetched, generation is blocked.
+Status bars use real national mobile carriers. Live EUR/crypto rates are required; if they cannot be fetched, generation is blocked.
 
 ```bash
 npm install
+npm run fetch-logos   # scarica/aggiorna i loghi ufficiali in public/logos/
 npm run dev
 ```
 

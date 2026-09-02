@@ -39,6 +39,71 @@ export function Monogram({
   )
 }
 
+export function AppLogo({
+  src,
+  alt,
+  size = 36,
+  pad = 3,
+}: {
+  src: string
+  alt: string
+  size?: number
+  pad?: number
+}) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.22,
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+        overflow: 'hidden',
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        width={size - pad * 2}
+        height={size - pad * 2}
+        style={{ objectFit: 'contain', display: 'block' }}
+        draggable={false}
+      />
+    </div>
+  )
+}
+
+export function CryptoLogo({ src, alt, size = 46 }: { src: string; alt: string; size?: number }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.14)',
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        width={size - 8}
+        height={size - 8}
+        style={{ objectFit: 'contain', display: 'block' }}
+        draggable={false}
+      />
+    </div>
+  )
+}
+
 export function Row({
   label,
   value,
@@ -231,11 +296,13 @@ export function CardFace({
   name,
   theme,
   tone,
+  brand,
 }: {
   mask: string
   name: string
   theme: ThemeTokens
   tone: 'from' | 'to'
+  brand?: string
 }) {
   const bg: CSSProperties =
     tone === 'from'
@@ -262,7 +329,12 @@ export function CardFace({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72em', opacity: 0.9 }}>
         <span>DEBIT</span>
-        <span>{mask.slice(-4)}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {brand && (
+            <img src={brand} alt="" width={18} height={18} style={{ objectFit: 'contain' }} draggable={false} />
+          )}
+          <span>{mask.slice(-4)}</span>
+        </span>
       </div>
       <div
         style={{
