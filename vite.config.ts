@@ -102,30 +102,39 @@ function screenApi(apiKey: string): Plugin {
   }
 }
 
+const rateProxy = {
+  '/rate-proxy/coingecko': {
+    target: 'https://api.coingecko.com',
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/rate-proxy\/coingecko/, ''),
+  },
+  '/rate-proxy/erapi': {
+    target: 'https://open.er-api.com',
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/rate-proxy\/erapi/, ''),
+  },
+  '/rate-proxy/currency': {
+    target: 'https://cdn.jsdelivr.net',
+    changeOrigin: true,
+    rewrite: (path: string) =>
+      path.replace(/^\/rate-proxy\/currency/, '/npm/@fawazahmed0/currency-api@latest'),
+  },
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  if (env.CHROME_PATH) process.env.CHROME_PATH = env.CHROME_PATH
   return {
     plugins: [react(), openRouterProxy(env.OPENROUTER_API_KEY ?? ''), screenApi(env.SCREEN_API_KEY ?? '')],
     server: {
       port: 5173,
-      proxy: {
-        '/rate-proxy/coingecko': {
-          target: 'https://api.coingecko.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rate-proxy\/coingecko/, ''),
-        },
-        '/rate-proxy/erapi': {
-          target: 'https://open.er-api.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rate-proxy\/erapi/, ''),
-        },
-        '/rate-proxy/currency': {
-          target: 'https://cdn.jsdelivr.net',
-          changeOrigin: true,
-          rewrite: (path) =>
-            path.replace(/^\/rate-proxy\/currency/, '/npm/@fawazahmed0/currency-api@latest'),
-        },
-      },
+      proxy: rateProxy,
+    },
+    preview: {
+      host: '127.0.0.1',
+      port: 8787,
+      strictPort: true,
+      proxy: rateProxy,
     },
   }
 })

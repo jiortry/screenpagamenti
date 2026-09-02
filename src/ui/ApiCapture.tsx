@@ -7,7 +7,7 @@ import { assembleReviewChat } from '../chat/review.ts'
 import { skinById } from '../chat/skins.ts'
 import type { ChatScenario, TgSkinId } from '../chat/types.ts'
 import { TG_SKIN_IDS } from '../chat/types.ts'
-import { applyPhotoArtifacts } from '../engine/capture.ts'
+import { applyPhotoArtifacts, type CaptureStyle } from '../engine/capture.ts'
 import { sampleAndroidPhone, sampleIphone } from '../engine/devices.ts'
 import { mulberry32, pick } from '../engine/random.ts'
 import { loadRates } from '../engine/rates.ts'
@@ -218,7 +218,11 @@ export function ApiCapture() {
           const el = payRef.current
           if (!el) throw new Error('missing pay node')
           const raw = await captureNode(el, job.pay.device.density)
-          const png = await applyPhotoArtifacts(raw, job.pay.capture, job.pay.seed)
+          const png = await applyPhotoArtifacts(
+            raw,
+            (job.pay as { capture?: CaptureStyle }).capture,
+            job.pay.seed,
+          )
           if (cancelled) return
           const result = pack('payments', job.pay.seed, job.pay.transactionId, png, job.pay.device, job.pay.locale)
           setStatus(`ok · ${result.kind} · ${result.id}`)

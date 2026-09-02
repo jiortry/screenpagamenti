@@ -1,0 +1,20 @@
+[Unit]
+Description=screenpagamenti internal screenshot API (localhost only)
+After=network.target
+# Isolated from Docker / BTCPay / Postgres stacks on this host.
+
+[Service]
+Type=simple
+User=screenapi
+Group=screenapi
+WorkingDirectory=/opt/screenpagamenti
+EnvironmentFile=-/opt/screenpagamenti/.env.local
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/screenpagamenti/node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 8787 --strictPort
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

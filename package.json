@@ -10,7 +10,8 @@
     "fetch-avatars": "node scripts/fetch-avatars.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start:internal": "vite preview --host 127.0.0.1 --port 8787 --strictPort"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
