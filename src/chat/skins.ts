@@ -238,5 +238,6 @@ export function skinById(id: TgSkinId): TgSkin {
 }
 
 export function resolveWall(skin: TgSkin, wall: TgWallId): Exclude<TgWallId, 'auto'> {
-  return wall === 'auto' ? skin.wallpaper : wall
+  if (wall !== 'auto') return wall
+  return skin.appearance === 'dark' ? 'photo-0' : 'photo-6'
 }

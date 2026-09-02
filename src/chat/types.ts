@@ -22,6 +22,15 @@ export const TG_WALL_IDS = [
   'photo-2',
   'photo-3',
   'photo-4',
+  'photo-5',
+  'photo-6',
+  'photo-7',
+  'photo-8',
+  'photo-9',
+  'photo-10',
+  'photo-11',
+  'photo-12',
+  'photo-13',
 ] as const
 
 export type TgWallId = (typeof TG_WALL_IDS)[number]
@@ -87,6 +96,7 @@ export type ChatScenario = {
   muted: boolean
   pinned?: string
   timestamp: string
+  wallpaper?: Exclude<TgWallId, 'auto'>
   redactNames?: boolean
   battery: number
   clock: string

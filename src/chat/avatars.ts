@@ -12,7 +12,22 @@ export const AVATAR_POOL = [...MEN, ...WOMEN, ...UNSPLASH]
 
 export const CHAT_PHOTOS = Array.from({ length: 16 }, (_, i) => `/chat-photos/p${String(i).padStart(2, '0')}.jpg`)
 
-export const PHOTO_WALLS = Array.from({ length: 5 }, (_, i) => `/chat-walls/w${String(i).padStart(2, '0')}.jpg`)
+export const PHOTO_WALLS = Array.from({ length: 14 }, (_, i) => `/chat-walls/w${String(i).padStart(2, '0')}.jpg`)
+
+const MOON_WALLS = [0, 4, 6, 7, 8] as const
+const NIGHT_WALLS = [1, 2, 3, 5, 13] as const
+const SUNSET_WALLS = [9, 10, 11, 12] as const
+
+export function pickSkyWall(rng: Rng): `photo-${number}` {
+  const roll = rng()
+  const idx =
+    roll < 0.78
+      ? pick(rng, MOON_WALLS)
+      : roll < 0.9
+        ? pick(rng, NIGHT_WALLS)
+        : pick(rng, SUNSET_WALLS)
+  return `photo-${idx}`
+}
 
 export const PEER_COLORS = ['#E17076', '#7BC862', '#E5CA77', '#65AADD', '#EE7AAE', '#6EC9CB', '#FA93AE']
 

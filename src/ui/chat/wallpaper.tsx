@@ -45,8 +45,8 @@ export function ChatWallpaper({
     const src = PHOTO_WALLS[i] ?? PHOTO_WALLS[0]
     return (
       <div style={cover}>
-        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'saturate(0.85) brightness(0.92)' }} />
-        <div style={{ ...cover, background: skin.appearance === 'dark' ? 'rgba(8,14,22,0.45)' : 'rgba(255,255,255,0.12)' }} />
+        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'saturate(1.08) brightness(0.82)' }} />
+        <div style={{ ...cover, background: skin.appearance === 'dark' ? 'rgba(6,10,18,0.22)' : 'rgba(255,255,255,0.06)' }} />
       </div>
     )
   }

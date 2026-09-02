@@ -5,7 +5,7 @@ import { formatClock } from '../engine/format.ts'
 import { localeMeta, sampleLocale } from '../engine/languages.ts'
 import { synthPerson } from '../engine/names.ts'
 import { chance, pick, randInt, type Rng } from '../engine/random.ts'
-import { maybeAvatar, pickPeerColor, pickPhoto } from './avatars.ts'
+import { maybeAvatar, pickPeerColor, pickPhoto, pickSkyWall } from './avatars.ts'
 import { chatUi, NICKS, scriptsFor, type Author, type Script, type Turn } from './copy.ts'
 import type { ChatMessage, ChatPeer, ChatScenario, MsgStatus, TgSkinId } from './types.ts'
 import { skinById } from './skins.ts'
@@ -266,6 +266,7 @@ export function createChatScenario(rng: Rng, seed: number, opts: ChatGenOpts): C
     muted: chance(rng, 0.1),
     pinned: kind === 'group' && chance(rng, 0.35) ? messages.find((m) => m.kind === 'text')?.text : undefined,
     timestamp: ts.toISOString(),
+    wallpaper: pickSkyWall(rng),
     battery,
     clock: formatClock(ts.toISOString(), loc.bcp47, {
       ios,

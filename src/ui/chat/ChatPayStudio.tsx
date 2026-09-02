@@ -63,7 +63,7 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
     const s = new URLSearchParams(window.location.search).get('skin')
     return TG_SKIN_IDS.includes(s as TgSkinId) ? (s as TgSkinId) : 'ios-day'
   })
-  const [wallId] = useState<TgWallId>('auto')
+  const [wallId, setWallId] = useState<TgWallId>('photo-0')
   const [rates, setRates] = useState<RateBook | RateError | null>(null)
   const [payScenario, setPayScenario] = useState<Scenario | null>(null)
   const [scenario, setScenario] = useState<ChatScenario | null>(null)
@@ -167,13 +167,14 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
           script,
           paymentPng: payPng,
         })
+        if (s.wallpaper) setWallId(s.wallpaper)
         setScenario(s)
         await document.fonts.ready
         await waitFrames()
         await new Promise((r) => window.setTimeout(r, 80))
         const png = await captureChat(s)
         setLastPng(png)
-        setGallery((g) => [{ scenario: s, png, skinId, wallId }, ...g].slice(0, 40))
+        setGallery((g) => [{ scenario: s, png, skinId, wallId: s.wallpaper ?? wallId }, ...g].slice(0, 40))
       }
       setLog(`Accepted ${count} review chat${count === 1 ? '' : 's'}.`)
     } catch (err) {

@@ -677,7 +677,7 @@ export function TelegramScreen({
   wallId: TgWallId
 }) {
   const skin = skinById(skinId)
-  const wall = resolveWall(skin, wallId)
+  const wall = resolveWall(skin, s.wallpaper ?? wallId)
   const font = skin.platform === 'ios'
     ? '"Inter", -apple-system, "SF Pro Text", "Noto Sans", sans-serif'
     : '"Roboto", "Noto Sans", sans-serif'

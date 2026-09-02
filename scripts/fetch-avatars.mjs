@@ -77,11 +77,26 @@ PICSUM.forEach((id, i) => {
   })
 })
 
-const WALL_IDS = [1015, 1018, 1036, 1043, 1050]
+const WALL_IDS = [
+  '1772415912163-bd5fe16b8ff0',
+  '1516339901601-2e1b62dc0c45',
+  '1419242902214-272b3f66ee7a',
+  '1444703686981-a3abbc4d4fe3',
+  '1548048845-dabb4bfae716',
+  '1475274047050-1d0c0975c63e',
+  '1764970692776-ce5fb30a7509',
+  '1760748860476-326fadf1ee44',
+  '1764126800913-6366abddc6a4',
+  '1470252649378-9c29740c9fa8',
+  '1469474968028-56623f02e42e',
+  '1495616811223-4d98c6e9c869',
+  '1500534623283-312aade485b7',
+  '1519681393784-d120267933ba',
+]
 WALL_IDS.forEach((id, i) => {
   JOBS.push({
     file: join(WALLS, `w${String(i).padStart(2, '0')}.jpg`),
-    url: `https://picsum.photos/id/${id}/720/1280`,
+    url: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=720&h=1400&q=80`,
   })
 })
 

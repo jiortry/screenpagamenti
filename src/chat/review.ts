@@ -2,7 +2,7 @@ import { pickCarrier } from '../engine/carriers.ts'
 import { sampleAndroidPhone, sampleFontScale, sampleIphone } from '../engine/devices.ts'
 import { formatClock } from '../engine/format.ts'
 import { localeMeta } from '../engine/languages.ts'
-import { maybeAvatar, pickPeerColor } from './avatars.ts'
+import { maybeAvatar, pickPeerColor, pickSkyWall } from './avatars.ts'
 import { chatUi } from './copy.ts'
 import type { ReviewScript } from './openrouter.ts'
 import { chance, pick, randInt, type Rng } from '../engine/random.ts'
@@ -170,6 +170,7 @@ export function assembleReviewChat(
     typing: false,
     muted: false,
     timestamp: ts.toISOString(),
+    wallpaper: pickSkyWall(rng),
     redactNames: true,
     battery,
     clock: formatClock(ts.toISOString(), loc.bcp47, {

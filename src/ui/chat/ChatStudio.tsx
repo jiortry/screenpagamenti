@@ -15,16 +15,15 @@ import { TelegramScreen } from './TelegramScreen.tsx'
 type Saved = { scenario: ChatScenario; png: string; skinId: TgSkinId; wallId: TgWallId }
 
 const WALLS: { id: TgWallId; label: string }[] = [
-  { id: 'auto', label: 'Auto' },
-  { id: 'doodle-day', label: 'Doodle' },
-  { id: 'doodle-night', label: 'Doodle night' },
-  { id: 'solid', label: 'Tinta unita' },
-  { id: 'gradient', label: 'Gradiente' },
-  { id: 'photo-0', label: 'Foto 1' },
-  { id: 'photo-1', label: 'Foto 2' },
-  { id: 'photo-2', label: 'Foto 3' },
-  { id: 'photo-3', label: 'Foto 4' },
-  { id: 'photo-4', label: 'Foto 5' },
+  { id: 'photo-0', label: 'Luna piena' },
+  { id: 'photo-4', label: 'Luna arancio' },
+  { id: 'photo-6', label: 'Luna' },
+  { id: 'photo-7', label: 'Luna nubi' },
+  { id: 'photo-8', label: 'Luna alberi' },
+  { id: 'photo-9', label: 'Tramonto' },
+  { id: 'photo-10', label: 'Tramonto 2' },
+  { id: 'photo-11', label: 'Tramonto 3' },
+  { id: 'photo-12', label: 'Tramonto 4' },
 ]
 
 function downloadDataUrl(dataUrl: string, name: string) {
@@ -55,7 +54,7 @@ export function ChatStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
     const s = new URLSearchParams(window.location.search).get('skin')
     return TG_SKIN_IDS.includes(s as TgSkinId) ? (s as TgSkinId) : 'ios-day'
   })
-  const [wallId, setWallId] = useState<TgWallId>('auto')
+  const [wallId, setWallId] = useState<TgWallId>('photo-0')
   const [locale, setLocale] = useState<LocaleId | 'auto'>('it')
   const [scenario, setScenario] = useState<ChatScenario | null>(null)
   const [busy, setBusy] = useState(false)
@@ -103,10 +102,11 @@ export function ChatStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
         setLog(`Genero ${i + 1}/${count}…`)
         const seed = (Math.random() * 0xffffffff) >>> 0
         const s = createChatScenario(mulberry32(seed), seed, { skinId, locale })
+        if (s.wallpaper) setWallId(s.wallpaper)
         await apply(s)
         const png = await capture(s)
         setLastPng(png)
-        setGallery((g) => [{ scenario: s, png, skinId, wallId }, ...g].slice(0, 40))
+        setGallery((g) => [{ scenario: s, png, skinId, wallId: s.wallpaper ?? wallId }, ...g].slice(0, 40))
       }
       setLog(`Accettate ${count} chat.`)
     } catch (err) {
@@ -209,7 +209,10 @@ export function ChatStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
               key={w.id}
               type="button"
               className={wallId === w.id ? 'on' : ''}
-              onClick={() => setWallId(w.id)}
+              onClick={() => {
+                setWallId(w.id)
+                setScenario((cur) => (cur && w.id !== 'auto' ? { ...cur, wallpaper: w.id } : cur))
+              }}
             >
               {w.label}
             </button>
