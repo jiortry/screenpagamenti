@@ -78,18 +78,30 @@ function Tail({ side, color }: { side: 'in' | 'out'; color: string }) {
   const out = side === 'out'
   return (
     <svg
-      width="7"
-      height="12"
-      viewBox="0 0 7 12"
+      width="14"
+      height="17"
+      viewBox="0 0 14 17"
       aria-hidden
       style={{
         position: 'absolute',
         bottom: 0,
         [out ? 'right' : 'left']: -6,
-        transform: out ? undefined : 'scaleX(-1)',
+        display: 'block',
+        pointerEvents: 'none',
+        overflow: 'visible',
       }}
     >
-      <path d="M7 0 C6 7 4 10 0 12 L7 12 Z" fill={color} />
+      {out ? (
+        <path
+          fill={color}
+          d="M0 0H8V17H0ZM13 17H7V0c.193 2.84.876 5.767 2.05 8.782.904 2.325 2.562 4.233 4.95 5.74z"
+        />
+      ) : (
+        <path
+          fill={color}
+          d="M6 0H14V17H6ZM1 17H7V0C6.807 2.84 6.124 5.767 4.95 8.782 4.046 11.107 2.388 13.015 0 17Z"
+        />
+      )}
     </svg>
   )
 }
@@ -162,8 +174,8 @@ function BubbleShell({
   const bg = mine ? skin.outBg : skin.inBg
   const radius = photo ? 14 : 16
   const br: CSSProperties['borderRadius'] = mine
-    ? `${radius}px ${radius}px ${tail ? 4 : radius}px ${radius}px`
-    : `${radius}px ${radius}px ${radius}px ${tail ? 4 : radius}px`
+    ? `${radius}px ${radius}px ${tail ? 0 : radius}px ${radius}px`
+    : `${radius}px ${radius}px ${radius}px ${tail ? 0 : radius}px`
   return (
     <div
       style={{
@@ -171,16 +183,41 @@ function BubbleShell({
         display: 'inline-block',
         width: 'fit-content',
         maxWidth: photo ? '100%' : maxW,
-        background: photo ? 'transparent' : bg,
-        color: mine ? skin.outFg : skin.inFg,
-        borderRadius: br,
-        boxShadow: photo ? 'none' : '0 1px 1.5px rgba(0,0,0,0.12)',
-        padding: photo ? 0 : '5px 8px 4px 10px',
-        overflow: 'visible',
+        filter: photo ? undefined : 'drop-shadow(0 1px 1px rgba(0,0,0,0.16))',
       }}
     >
-      {children}
-      {tail && !photo && <Tail side={mine ? 'out' : 'in'} color={bg} />}
+      <div
+        style={{
+          position: 'relative',
+          display: 'inline-block',
+          width: 'fit-content',
+          maxWidth: photo ? '100%' : maxW,
+          background: photo ? 'transparent' : bg,
+          color: mine ? skin.outFg : skin.inFg,
+          borderRadius: br,
+          padding: photo ? 0 : '5px 8px 4px 10px',
+          overflow: 'visible',
+        }}
+      >
+        {children}
+        {tail && !photo && (
+          <>
+            <span
+              aria-hidden
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                [mine ? 'right' : 'left']: 0,
+                width: 6,
+                height: 16,
+                background: bg,
+                pointerEvents: 'none',
+              }}
+            />
+            <Tail side={mine ? 'out' : 'in'} color={bg} />
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -743,8 +780,8 @@ export function TelegramScreen({
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
-            padding: '6px 6px 8px',
-            overflow: 'hidden',
+            padding: '6px 11px 8px',
+            overflow: 'visible',
           }}
         >
           {rows}

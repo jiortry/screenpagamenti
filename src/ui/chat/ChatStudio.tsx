@@ -258,9 +258,13 @@ export function ChatStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
               }}
             >
               <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                <div className="bezel" style={{ borderRadius: view.device.corner + 10 }}>
+                {view.device.family === 'iphone' ? (
                   <TelegramScreen s={view} skinId={skinId} wallId={wallId} />
-                </div>
+                ) : (
+                  <div className="bezel" style={{ borderRadius: view.device.corner + 10 }}>
+                    <TelegramScreen s={view} skinId={skinId} wallId={wallId} />
+                  </div>
+                )}
               </div>
             </div>
           ) : (

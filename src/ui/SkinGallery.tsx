@@ -25,7 +25,7 @@ function Phone({
         {s.institution.short} · {appearance} · {device.width}×{device.height}
       </figcaption>
       <div
-        className="skin-bezel"
+        className={device.family === 'iphone' ? undefined : 'skin-bezel'}
         style={{
           width: device.width * scale,
           height: device.height * scale,
@@ -45,7 +45,7 @@ export function SkinGallery({ rates }: { rates: RateBook }) {
   const deviceFilter = params.get('device')
   const brands = focus ? PREVIEW_BRANDS.filter((id) => id === focus) : [...PREVIEW_BRANDS]
   const showSe = deviceFilter !== 'iphone-16-pro-max'
-  const showMax = deviceFilter !== 'iphone-se'
+  const showMax = deviceFilter !== 'iphone-14'
   const seScale = focus ? 1 : 0.38
   const maxScale = focus ? 1 : 0.32
   const root = useRef<HTMLDivElement>(null)
@@ -90,19 +90,19 @@ export function SkinGallery({ rates }: { rates: RateBook }) {
       <header className="skin-gallery-head">
         <p className="eyebrow">Brand skins</p>
         <h1>Per-provider mockups</h1>
-        <p className="lede">Same payment, each institution in light and dark. iPhone SE and Pro Max.</p>
+        <p className="lede">Same payment, each institution in light and dark. iPhone 14 and Pro Max.</p>
       </header>
       {showSe && (
         <section>
-          <h2>iPhone SE 375×667</h2>
+          <h2>iPhone 14 390×844</h2>
           <div className="skin-row">
             {brands.flatMap((id) =>
               (['light', 'dark'] as const).map((appearance) => (
                 <Phone
-                  key={`se-${id}-${appearance}`}
+                  key={`14-${id}-${appearance}`}
                   institutionId={id}
                   rates={rates}
-                  deviceId="iphone-se"
+                  deviceId="iphone-14"
                   scale={seScale}
                   appearance={appearance}
                 />

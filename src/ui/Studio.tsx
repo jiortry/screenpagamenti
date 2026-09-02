@@ -281,7 +281,10 @@ export function Studio({ onMode }: { onMode?: (m: StudioMode) => void }) {
                   transformOrigin: 'top left',
                 }}
               >
-                <div className="bezel" style={{ borderRadius: scenario.device.corner + 10 }}>
+                <div
+                  className={scenario.device.family === 'iphone' ? undefined : 'bezel'}
+                  style={scenario.device.family === 'iphone' ? undefined : { borderRadius: scenario.device.corner + 10 }}
+                >
                   <PaymentScreen s={scenario} />
                 </div>
               </div>

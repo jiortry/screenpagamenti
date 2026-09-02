@@ -3,20 +3,6 @@ import { pick, randFloat, randInt, type Rng } from './random.ts'
 
 const IPHONE: DeviceSpec[] = [
   {
-    id: 'iphone-se',
-    family: 'iphone',
-    label: 'older iPhone',
-    width: 375,
-    height: 667,
-    corner: 20,
-    status: 20,
-    island: 'none',
-    nav: 'home-button',
-    density: 2,
-    safeTop: 20,
-    safeBottom: 0,
-  },
-  {
     id: 'iphone-13-mini',
     family: 'iphone',
     label: 'compact iPhone',
