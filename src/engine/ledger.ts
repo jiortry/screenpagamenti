@@ -1,4 +1,5 @@
 import type { LayoutId, LedgerEntry, LocaleId, PaymentCategory } from '../types.ts'
+import { merchantIcon } from './merchants.ts'
 import { chance, pick, randInt, type Rng } from './random.ts'
 
 const MERCHANTS: Record<LocaleId, { in: string[]; out: string[] }> = {
@@ -138,6 +139,7 @@ export function sampleLedger(
       label,
       amountEur,
       timestamp: ts.toISOString(),
+      icon: merchantIcon(label),
     })
   }
 

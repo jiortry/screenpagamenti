@@ -183,6 +183,7 @@ export type LedgerEntry = {
   label: string
   amountEur: number
   timestamp: string
+  icon?: string
 }
 
 export type Scenario = {

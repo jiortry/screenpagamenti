@@ -176,16 +176,64 @@ function ActivityRow({
         borderBottom: `1px solid ${theme.line}`,
       }}
     >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 650, fontSize: '0.86em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {entry.label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <MerchantAvatar entry={entry} theme={theme} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 650, fontSize: '0.86em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {entry.label}
+          </div>
+          <div style={{ color: theme.muted, fontSize: '0.72em' }}>{when}</div>
         </div>
-        <div style={{ color: theme.muted, fontSize: '0.72em' }}>{when}</div>
       </div>
       <div style={{ fontWeight: 800, fontSize: '0.86em', color: tint, whiteSpace: 'nowrap' }}>
         {incoming ? '+' : '−'}
         {formatFiat(entry.amountEur, 'EUR', s.bcp47)}
       </div>
+    </div>
+  )
+}
+
+function MerchantAvatar({ entry, theme }: { entry: LedgerEntry; theme: ThemeTokens }) {
+  const incoming = entry.direction === 'in'
+  const size = 32
+  if (entry.icon) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 9,
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          overflow: 'hidden',
+        }}
+      >
+        <img src={entry.icon} alt="" width={size - 6} height={size - 6} style={{ objectFit: 'contain' }} draggable={false} />
+      </div>
+    )
+  }
+  const letter = entry.label.replace(/[^A-Za-zÀ-ÿ0-9]/g, '').charAt(0).toUpperCase() || '?'
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 9,
+        background: incoming ? `${theme.success}22` : theme.chip,
+        color: incoming ? theme.success : theme.muted,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 800,
+        fontSize: '0.82em',
+        flexShrink: 0,
+      }}
+    >
+      {letter}
     </div>
   )
 }

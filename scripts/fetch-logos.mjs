@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = join(__dirname, '../public/logos')
 const ICONS = join(OUT, 'icons')
+const MERCHANTS_DIR = join(OUT, 'merchants')
 const SI = 'https://cdn.jsdelivr.net/npm/simple-icons@14.2.0/icons'
 const WVL = 'https://cdn.worldvectorlogo.com/logos'
 const GICON = (domain) =>
@@ -120,6 +121,41 @@ const APP_ICONS = [
   { id: 'mastercard', domain: 'mastercard.com' },
 ]
 
+/** @type {{ slug: string; domain: string }[]} */
+const MERCHANTS = [
+  { slug: 'amazon', domain: 'amazon.com' },
+  { slug: 'netflix', domain: 'netflix.com' },
+  { slug: 'spotify', domain: 'spotify.com' },
+  { slug: 'uber', domain: 'uber.com' },
+  { slug: 'starbucks', domain: 'starbucks.com' },
+  { slug: 'apple', domain: 'apple.com' },
+  { slug: 'shell', domain: 'shell.com' },
+  { slug: 'rewe', domain: 'rewe.de' },
+  { slug: 'carrefour', domain: 'carrefour.fr' },
+  { slug: 'mercadona', domain: 'mercadona.es' },
+  { slug: 'grab', domain: 'grab.com' },
+  { slug: 'shopee', domain: 'shopee.com' },
+  { slug: 'coupang', domain: 'coupang.com' },
+  { slug: 'migros', domain: 'migros.ch' },
+  { slug: 'biedronka', domain: 'biedronka.pl' },
+  { slug: 'sncf', domain: 'sncf.com' },
+  { slug: 'repsol', domain: 'repsol.com' },
+  { slug: 'continente', domain: 'continente.pt' },
+  { slug: 'conad', domain: 'conad.it' },
+  { slug: 'esselunga', domain: 'esselunga.it' },
+  { slug: 'enel', domain: 'enel.it' },
+  { slug: 'tim', domain: 'tim.it' },
+  { slug: 'swiggy', domain: 'swiggy.com' },
+  { slug: 'salary', domain: 'wise.com' },
+  { slug: 'refund', domain: 'paypal.com' },
+  { slug: 'freelance', domain: 'fiverr.com' },
+  { slug: 'transfer', domain: 'revolut.com' },
+  { slug: 'pharmacy', domain: 'boots.com' },
+  { slug: 'grocery', domain: 'tesco.com' },
+  { slug: 'gas', domain: 'eni.com' },
+  { slug: 'cafe', domain: 'costacoffee.com' },
+]
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 async function fetchLogo({ file, url }) {
@@ -146,8 +182,18 @@ async function fetchAppIcon({ id, domain }) {
   console.log(`✓ icons/${id}.png`)
 }
 
+async function fetchMerchantIcon({ slug, domain }) {
+  const url = GICON(domain)
+  const res = await fetch(url, { redirect: 'follow' })
+  if (!res.ok) throw new Error(`${slug}: HTTP ${res.status}`)
+  const buf = Buffer.from(await res.arrayBuffer())
+  await writeFile(join(MERCHANTS_DIR, `${slug}.png`), buf)
+  console.log(`✓ merchants/${slug}.png`)
+}
+
 await mkdir(OUT, { recursive: true })
 await mkdir(ICONS, { recursive: true })
+await mkdir(MERCHANTS_DIR, { recursive: true })
 const failed = []
 for (const logo of LOGOS) {
   try {
@@ -171,9 +217,20 @@ for (const inst of APP_ICONS) {
   }
 }
 
+console.log('\nMerchant icons…')
+for (const m of MERCHANTS) {
+  try {
+    await fetchMerchantIcon(m)
+    await sleep(300)
+  } catch (e) {
+    failed.push({ file: `merchants/${m.slug}.png`, error: String(e) })
+    console.error(`✗ merchants/${m.slug}.png: ${e.message}`)
+  }
+}
+
 if (failed.length) {
   console.error(`\n${failed.length} download falliti`)
   process.exitCode = 1
 } else {
-  console.log(`\n${LOGOS.length} loghi + ${APP_ICONS.length} icone app in public/logos/`)
+  console.log(`\n${LOGOS.length} loghi + ${APP_ICONS.length} icone app + ${MERCHANTS.length} merchant in public/logos/`)
 }
