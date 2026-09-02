@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Institution, LedgerEntry, Scenario, TxStatus } from '../types.ts'
 import type { ThemeTokens } from '../engine/themes.ts'
-import { brandProfile } from '../engine/brands.ts'
+import { brandProfile, type MockupSkin } from '../engine/brands.ts'
 import { formatFiat, formatRelativeActivity } from '../engine/format.ts'
 import { t, tf } from '../i18n/catalog.ts'
 
@@ -320,18 +320,41 @@ export function Chip({ children, theme, color }: { children: ReactNode; theme: T
   )
 }
 
+function ctaPad(size: MockupSkin['ctaSize'], compact?: boolean) {
+  if (size === 'lg') return compact ? '13px 16px' : '16px 18px'
+  if (size === 'sm') return compact ? '8px 12px' : '9px 14px'
+  return compact ? '10px 14px' : '12px 16px'
+}
+
+function ctaType(size: MockupSkin['ctaSize'], compact?: boolean) {
+  if (size === 'lg') return compact ? '0.92em' : '1.02em'
+  if (size === 'sm') return compact ? '0.8em' : '0.84em'
+  return compact ? '0.88em' : '0.95em'
+}
+
+function actionBox(ui: MockupSkin): CSSProperties {
+  const place = ui.ctaPlace
+  return {
+    marginTop: place === 'follow' ? 10 : 'auto',
+    marginBottom: place === 'raised' ? 22 : place === 'flush' ? 0 : 4,
+    marginInline: ui.ctaInset,
+  }
+}
+
 export function PrimaryButton({
   label,
   theme,
   wide,
   radius,
   compact,
+  size = 'md',
 }: {
   label: string
   theme: ThemeTokens
   wide?: boolean
   radius?: number
   compact?: boolean
+  size?: MockupSkin['ctaSize']
 }) {
   return (
     <div
@@ -339,10 +362,10 @@ export function PrimaryButton({
         background: theme.button,
         color: theme.buttonText,
         borderRadius: radius ?? theme.radius + 4,
-        padding: compact ? '10px 14px' : '12px 16px',
+        padding: ctaPad(size, compact),
         textAlign: 'center',
         fontWeight: 700,
-        fontSize: compact ? '0.88em' : '0.95em',
+        fontSize: ctaType(size, compact),
         flex: wide ? 1 : undefined,
         boxShadow: 'none',
       }}
@@ -357,11 +380,13 @@ export function GhostButton({
   theme,
   radius,
   compact,
+  size = 'md',
 }: {
   label: string
   theme: ThemeTokens
   radius?: number
   compact?: boolean
+  size?: MockupSkin['ctaSize']
 }) {
   return (
     <div
@@ -369,12 +394,28 @@ export function GhostButton({
         border: `1px solid ${theme.line}`,
         color: theme.text,
         borderRadius: radius ?? theme.radius + 4,
-        padding: compact ? '10px 14px' : '12px 16px',
+        padding: ctaPad(size, compact),
         textAlign: 'center',
         fontWeight: 650,
-        fontSize: compact ? '0.84em' : '0.9em',
+        fontSize: ctaType(size, compact),
         flex: 1,
         background: theme.surface,
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
+function TextAction({ label, theme }: { label: string; theme: ThemeTokens }) {
+  return (
+    <div
+      style={{
+        textAlign: 'center',
+        color: theme.accent,
+        fontWeight: 650,
+        fontSize: '0.92em',
+        padding: '8px 4px',
       }}
     >
       {label}
@@ -397,25 +438,39 @@ export function Actions({
 }) {
   const ui = brandProfile(s.institution).ui
   const radius = ui.pill ? 999 : theme.radius
+  const box = actionBox(ui)
+  const size = ui.ctaSize
+  const secondary =
+    ui.ctaSecondary === 'none' || compact
+      ? null
+      : ui.ctaSecondary === 'text'
+        ? <TextAction label={share} theme={theme} />
+        : <GhostButton label={share} theme={theme} radius={radius} compact={compact} size={size} />
   if (ui.cta === 'split') {
     return (
-      <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-        <GhostButton label={share} theme={theme} radius={radius} compact={compact} />
-        <PrimaryButton label={done} theme={theme} wide radius={radius} compact={compact} />
+      <div style={{ ...box, display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        {ui.ctaSecondary === 'text' ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <TextAction label={share} theme={theme} />
+          </div>
+        ) : (
+          <GhostButton label={share} theme={theme} radius={radius} compact={compact} size={size} />
+        )}
+        <PrimaryButton label={done} theme={theme} wide radius={radius} compact={compact} size={size} />
       </div>
     )
   }
-  if (ui.cta === 'one') {
+  if (ui.cta === 'one' || !secondary) {
     return (
-      <div style={{ marginTop: 'auto' }}>
-        <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} />
+      <div style={box}>
+        <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} size={size} />
       </div>
     )
   }
   return (
-    <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
-      <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} />
-      {!compact && <GhostButton label={share} theme={theme} radius={radius} compact={compact} />}
+    <div style={{ ...box, display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
+      <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} size={size} />
+      {secondary}
     </div>
   )
 }

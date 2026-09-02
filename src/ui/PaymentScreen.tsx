@@ -114,7 +114,7 @@ export function PaymentScreen({ s }: { s: Scenario }) {
           flexDirection: 'column',
           paddingInline: m.pad,
           paddingTop: ui.chrome === 'bare' ? 8 : 4,
-          paddingBottom: 6,
+          paddingBottom: ui.ctaPlace === 'flush' ? 2 : ui.ctaPlace === 'raised' ? 10 : 6,
           gap: m.gap,
           minHeight: 0,
         }}
@@ -315,11 +315,32 @@ function DetailSheet({ s, children }: { s: Scenario; children: ReactNode }) {
   return <div style={sheetStyle(theme, ui)}>{children}</div>
 }
 
+function SuccessMark({ color, size }: { color: string; size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <circle cx="24" cy="24" r="24" fill={color} />
+      <path
+        d="M14 25.2 l7.2 7.2 13.2-16.4"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function PersonMark({ s, letters, size = 52 }: { s: Scenario; letters: string; size?: number }) {
   const theme = screenTheme(s)
   const ui = brandSkin(s.institution)
   if (ui.avatar === 'none') return null
   const tint = statusTint(s.status, theme)
+  if (ui.avatar === 'check') {
+    return s.status === 'failed' || s.status === 'cancelled'
+      ? <WarnGlyph color={tint} />
+      : <SuccessMark color={tint} size={size} />
+  }
   if (s.visual.iconStyle === 'illustration') {
     return s.status === 'failed' || s.status === 'cancelled' ? <WarnGlyph color={tint} /> : <CheckGlyph color={tint} />
   }
@@ -342,13 +363,16 @@ function HeroLayout({ s }: { s: Scenario }) {
       <Header s={s} withBalance={ui.chrome === 'toolbar'} />
       {ui.hero !== 'amount' && (
         <div style={{ display: 'flex', justifyContent: ui.amountAlign === 'start' ? 'flex-start' : 'center', marginTop: heroGap(ui) }}>
-          <PersonMark s={s} letters={person.initials} />
+          <PersonMark s={s} letters={person.initials} size={ui.avatar === 'check' ? 64 : 52} />
         </div>
       )}
-      {ui.hero !== 'amount' && (
+      {ui.hero !== 'amount' && ui.avatar !== 'check' && (
         <div style={{ textAlign: ui.amountAlign, fontWeight: 700 }}>{person.full}</div>
       )}
       <AmountBlock s={s} />
+      {ui.avatar === 'check' && (
+        <div style={{ textAlign: ui.amountAlign, fontWeight: 600, color: theme.muted, fontSize: '0.92em' }}>{person.full}</div>
+      )}
       <DetailSheet s={s}>
         {rows.map(([label, value, mono]) => (
           <Row key={label} label={label} value={value} theme={theme} mono={mono} mode={ui.rows} />
