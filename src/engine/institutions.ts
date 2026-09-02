@@ -1,63 +1,48 @@
 import type { BankRegion, Institution, PaymentCategory } from '../types.ts'
 import { pick, type Rng } from './random.ts'
 
+const icon = (id: string) => `/logos/icons/${id}.png`
+
 export const INSTITUTIONS: Institution[] = [
-  // Banche IT
-  { id: 'intesa-sanpaolo', name: 'Intesa Sanpaolo', short: 'Intesa', region: 'IT', kind: 'bank', logo: '/logos/intesa-sanpaolo.svg' },
-  { id: 'unicredit', name: 'UniCredit', short: 'UniCredit', region: 'IT', kind: 'bank', logo: '/logos/unicredit.svg' },
-  { id: 'fineco', name: 'Fineco', short: 'Fineco', region: 'IT', kind: 'bank', logo: '/logos/fineco.svg' },
-  // Banche US
-  { id: 'chase', name: 'Chase', short: 'Chase', region: 'US', kind: 'bank', logo: '/logos/chase.svg' },
-  { id: 'bank-of-america', name: 'Bank of America', short: 'BoA', region: 'US', kind: 'bank', logo: '/logos/bankofamerica.svg' },
-  { id: 'wells-fargo', name: 'Wells Fargo', short: 'Wells Fargo', region: 'US', kind: 'bank', logo: '/logos/wellsfargo.svg' },
-  // Banche EU
-  { id: 'revolut', name: 'Revolut', short: 'Revolut', region: 'EU', kind: 'bank', logo: '/logos/revolut.svg' },
-  { id: 'n26', name: 'N26', short: 'N26', region: 'EU', kind: 'bank', logo: '/logos/n26.svg' },
-  // Banche DE
-  { id: 'deutsche-bank', name: 'Deutsche Bank', short: 'Deutsche Bank', region: 'DE', kind: 'bank', logo: '/logos/deutschebank.svg' },
-  { id: 'commerzbank', name: 'Commerzbank', short: 'Commerzbank', region: 'DE', kind: 'bank', logo: '/logos/commerzbank.svg' },
-  // Banche FR
-  { id: 'bnp-paribas', name: 'BNP Paribas', short: 'BNP', region: 'FR', kind: 'bank', logo: '/logos/bnp-paribas.svg' },
-  { id: 'societe-generale', name: 'Société Générale', short: 'SocGen', region: 'FR', kind: 'bank', logo: '/logos/societe-generale.svg' },
-  // Banche RO
-  { id: 'bcr', name: 'BCR', short: 'BCR', region: 'RO', kind: 'bank', logo: '/logos/bcr.png' },
-  { id: 'brd', name: 'BRD', short: 'BRD', region: 'RO', kind: 'bank', logo: '/logos/brd.png' },
-  // Banche GB
-  { id: 'barclays', name: 'Barclays', short: 'Barclays', region: 'GB', kind: 'bank', logo: '/logos/barclays.svg' },
-  { id: 'hsbc', name: 'HSBC', short: 'HSBC', region: 'GB', kind: 'bank', logo: '/logos/hsbc.svg' },
-  // Banche ES
-  { id: 'santander', name: 'Santander', short: 'Santander', region: 'ES', kind: 'bank', logo: '/logos/santander.svg' },
-  { id: 'bbva', name: 'BBVA', short: 'BBVA', region: 'ES', kind: 'bank', logo: '/logos/bbva.svg' },
-  // Banche CH
-  { id: 'ubs', name: 'UBS', short: 'UBS', region: 'CH', kind: 'bank', logo: '/logos/ubs.png' },
-  // Banche AF
-  { id: 'standard-bank', name: 'Standard Bank', short: 'Standard Bank', region: 'AF', kind: 'bank', logo: '/logos/standard-bank.svg' },
-  { id: 'ecobank', name: 'Ecobank', short: 'Ecobank', region: 'AF', kind: 'bank', logo: '/logos/ecobank.png' },
-  // Wallet
-  { id: 'paypal', name: 'PayPal', short: 'PayPal', region: 'INTL', kind: 'wallet', logo: '/logos/paypal.svg' },
-  { id: 'apple-pay', name: 'Apple Pay', short: 'Apple Pay', region: 'INTL', kind: 'wallet', logo: '/logos/applepay.svg' },
-  { id: 'google-pay', name: 'Google Pay', short: 'Google Pay', region: 'INTL', kind: 'wallet', logo: '/logos/googlepay.svg' },
-  // P2P
-  { id: 'venmo', name: 'Venmo', short: 'Venmo', region: 'US', kind: 'p2p', logo: '/logos/venmo.svg' },
-  { id: 'cash-app', name: 'Cash App', short: 'Cash App', region: 'US', kind: 'p2p', logo: '/logos/cashapp.svg' },
-  // Remit
-  { id: 'wise', name: 'Wise', short: 'Wise', region: 'INTL', kind: 'remit', logo: '/logos/wise.svg' },
-  { id: 'western-union', name: 'Western Union', short: 'Western Union', region: 'INTL', kind: 'remit', logo: '/logos/westernunion.svg' },
-  { id: 'remitly', name: 'Remitly', short: 'Remitly', region: 'INTL', kind: 'remit', logo: '/logos/remitly.png' },
-  // Crypto exchange
-  { id: 'binance', name: 'Binance', short: 'Binance', region: 'INTL', kind: 'crypto', logo: '/logos/binance.svg' },
-  { id: 'coinbase', name: 'Coinbase', short: 'Coinbase', region: 'INTL', kind: 'crypto', logo: '/logos/coinbase.svg' },
-  { id: 'kraken', name: 'Kraken', short: 'Kraken', region: 'INTL', kind: 'crypto', logo: '/logos/kraken.svg' },
-  { id: 'crypto-com', name: 'Crypto.com', short: 'Crypto.com', region: 'INTL', kind: 'crypto', logo: '/logos/crypto-com.svg' },
-  // Telco
-  { id: 'tim', name: 'TIM', short: 'TIM', region: 'IT', kind: 'telco', logo: '/logos/tim.svg' },
-  { id: 'vodafone', name: 'Vodafone', short: 'Vodafone', region: 'EU', kind: 'telco', logo: '/logos/vodafone.svg' },
-  { id: 'orange', name: 'Orange', short: 'Orange', region: 'FR', kind: 'telco', logo: '/logos/orange.svg' },
-  // Cash
-  { id: 'moneygram', name: 'MoneyGram', short: 'MoneyGram', region: 'INTL', kind: 'cash', logo: '/logos/moneygram.svg' },
-  // Carte
-  { id: 'visa', name: 'Visa', short: 'Visa', region: 'INTL', kind: 'cards', logo: '/logos/visa.svg' },
-  { id: 'mastercard', name: 'Mastercard', short: 'Mastercard', region: 'INTL', kind: 'cards', logo: '/logos/mastercard.svg' },
+  { id: 'intesa-sanpaolo', name: 'Intesa Sanpaolo', short: 'Intesa', region: 'IT', kind: 'bank', logo: '/logos/intesa-sanpaolo.svg', icon: icon('intesa-sanpaolo'), domain: 'intesasanpaolo.com' },
+  { id: 'unicredit', name: 'UniCredit', short: 'UniCredit', region: 'IT', kind: 'bank', logo: '/logos/unicredit.svg', icon: icon('unicredit'), domain: 'unicredit.it' },
+  { id: 'fineco', name: 'Fineco', short: 'Fineco', region: 'IT', kind: 'bank', logo: '/logos/fineco.svg', icon: icon('fineco'), domain: 'finecobank.com' },
+  { id: 'chase', name: 'Chase', short: 'Chase', region: 'US', kind: 'bank', logo: '/logos/chase.svg', icon: icon('chase'), domain: 'chase.com' },
+  { id: 'bank-of-america', name: 'Bank of America', short: 'BoA', region: 'US', kind: 'bank', logo: '/logos/bankofamerica.svg', icon: icon('bank-of-america'), domain: 'bankofamerica.com' },
+  { id: 'wells-fargo', name: 'Wells Fargo', short: 'Wells Fargo', region: 'US', kind: 'bank', logo: '/logos/wellsfargo.svg', icon: icon('wells-fargo'), domain: 'wellsfargo.com' },
+  { id: 'revolut', name: 'Revolut', short: 'Revolut', region: 'EU', kind: 'bank', logo: '/logos/revolut.svg', icon: icon('revolut'), domain: 'revolut.com' },
+  { id: 'n26', name: 'N26', short: 'N26', region: 'EU', kind: 'bank', logo: '/logos/n26.svg', icon: icon('n26'), domain: 'n26.com' },
+  { id: 'deutsche-bank', name: 'Deutsche Bank', short: 'Deutsche Bank', region: 'DE', kind: 'bank', logo: '/logos/deutschebank.svg', icon: icon('deutsche-bank'), domain: 'db.com' },
+  { id: 'commerzbank', name: 'Commerzbank', short: 'Commerzbank', region: 'DE', kind: 'bank', logo: '/logos/commerzbank.svg', icon: icon('commerzbank'), domain: 'commerzbank.com' },
+  { id: 'bnp-paribas', name: 'BNP Paribas', short: 'BNP', region: 'FR', kind: 'bank', logo: '/logos/bnp-paribas.svg', icon: icon('bnp-paribas'), domain: 'bnpparibas.com' },
+  { id: 'societe-generale', name: 'Société Générale', short: 'SocGen', region: 'FR', kind: 'bank', logo: '/logos/societe-generale.svg', icon: icon('societe-generale'), domain: 'societegenerale.com' },
+  { id: 'bcr', name: 'BCR', short: 'BCR', region: 'RO', kind: 'bank', logo: '/logos/bcr.png', icon: icon('bcr'), domain: 'bcr.ro' },
+  { id: 'brd', name: 'BRD', short: 'BRD', region: 'RO', kind: 'bank', logo: '/logos/brd.png', icon: icon('brd'), domain: 'brd.ro' },
+  { id: 'barclays', name: 'Barclays', short: 'Barclays', region: 'GB', kind: 'bank', logo: '/logos/barclays.svg', icon: icon('barclays'), domain: 'barclays.com' },
+  { id: 'hsbc', name: 'HSBC', short: 'HSBC', region: 'GB', kind: 'bank', logo: '/logos/hsbc.svg', icon: icon('hsbc'), domain: 'hsbc.com' },
+  { id: 'santander', name: 'Santander', short: 'Santander', region: 'ES', kind: 'bank', logo: '/logos/santander.svg', icon: icon('santander'), domain: 'santander.com' },
+  { id: 'bbva', name: 'BBVA', short: 'BBVA', region: 'ES', kind: 'bank', logo: '/logos/bbva.svg', icon: icon('bbva'), domain: 'bbva.com' },
+  { id: 'ubs', name: 'UBS', short: 'UBS', region: 'CH', kind: 'bank', logo: '/logos/ubs.png', icon: icon('ubs'), domain: 'ubs.com' },
+  { id: 'standard-bank', name: 'Standard Bank', short: 'Standard Bank', region: 'AF', kind: 'bank', logo: '/logos/standard-bank.svg', icon: icon('standard-bank'), domain: 'standardbank.com' },
+  { id: 'ecobank', name: 'Ecobank', short: 'Ecobank', region: 'AF', kind: 'bank', logo: '/logos/ecobank.png', icon: icon('ecobank'), domain: 'ecobank.com' },
+  { id: 'paypal', name: 'PayPal', short: 'PayPal', region: 'INTL', kind: 'wallet', logo: '/logos/paypal.svg', icon: icon('paypal'), domain: 'paypal.com' },
+  { id: 'apple-pay', name: 'Apple Pay', short: 'Apple Pay', region: 'INTL', kind: 'wallet', logo: '/logos/applepay.svg', icon: icon('apple-pay'), domain: 'apple.com' },
+  { id: 'google-pay', name: 'Google Pay', short: 'Google Pay', region: 'INTL', kind: 'wallet', logo: '/logos/googlepay.svg', icon: icon('google-pay'), domain: 'google.com' },
+  { id: 'venmo', name: 'Venmo', short: 'Venmo', region: 'US', kind: 'p2p', logo: '/logos/venmo.svg', icon: icon('venmo'), domain: 'venmo.com' },
+  { id: 'cash-app', name: 'Cash App', short: 'Cash App', region: 'US', kind: 'p2p', logo: '/logos/cashapp.svg', icon: icon('cash-app'), domain: 'cash.app' },
+  { id: 'wise', name: 'Wise', short: 'Wise', region: 'INTL', kind: 'remit', logo: '/logos/wise.svg', icon: icon('wise'), domain: 'wise.com' },
+  { id: 'western-union', name: 'Western Union', short: 'Western Union', region: 'INTL', kind: 'remit', logo: '/logos/westernunion.svg', icon: icon('western-union'), domain: 'westernunion.com' },
+  { id: 'remitly', name: 'Remitly', short: 'Remitly', region: 'INTL', kind: 'remit', logo: '/logos/remitly.png', icon: icon('remitly'), domain: 'remitly.com' },
+  { id: 'binance', name: 'Binance', short: 'Binance', region: 'INTL', kind: 'crypto', logo: '/logos/binance.svg', icon: icon('binance'), domain: 'binance.com' },
+  { id: 'coinbase', name: 'Coinbase', short: 'Coinbase', region: 'INTL', kind: 'crypto', logo: '/logos/coinbase.svg', icon: icon('coinbase'), domain: 'coinbase.com' },
+  { id: 'kraken', name: 'Kraken', short: 'Kraken', region: 'INTL', kind: 'crypto', logo: '/logos/kraken.svg', icon: icon('kraken'), domain: 'kraken.com' },
+  { id: 'crypto-com', name: 'Crypto.com', short: 'Crypto.com', region: 'INTL', kind: 'crypto', logo: '/logos/crypto-com.svg', icon: icon('crypto-com'), domain: 'crypto.com' },
+  { id: 'tim', name: 'TIM', short: 'TIM', region: 'IT', kind: 'telco', logo: '/logos/tim.svg', icon: icon('tim'), domain: 'tim.it' },
+  { id: 'vodafone', name: 'Vodafone', short: 'Vodafone', region: 'EU', kind: 'telco', logo: '/logos/vodafone.svg', icon: icon('vodafone'), domain: 'vodafone.com' },
+  { id: 'orange', name: 'Orange', short: 'Orange', region: 'FR', kind: 'telco', logo: '/logos/orange.svg', icon: icon('orange'), domain: 'orange.com' },
+  { id: 'moneygram', name: 'MoneyGram', short: 'MoneyGram', region: 'INTL', kind: 'cash', logo: '/logos/moneygram.svg', icon: icon('moneygram'), domain: 'moneygram.com' },
+  { id: 'visa', name: 'Visa', short: 'Visa', region: 'INTL', kind: 'cards', logo: '/logos/visa.svg', icon: icon('visa'), domain: 'visa.com' },
+  { id: 'mastercard', name: 'Mastercard', short: 'Mastercard', region: 'INTL', kind: 'cards', logo: '/logos/mastercard.svg', icon: icon('mastercard'), domain: 'mastercard.com' },
 ]
 
 function kindFor(category: PaymentCategory): Institution['kind'] {

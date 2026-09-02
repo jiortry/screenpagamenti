@@ -38,6 +38,21 @@ export function formatDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso))
 }
 
+export function formatRelativeActivity(
+  iso: string,
+  mainIso: string,
+  _locale: string,
+  labels: { today: string; yesterday: string; daysAgo: (n: number) => string },
+): string {
+  const ts = new Date(iso)
+  const main = new Date(mainIso)
+  const dayMs = 86400000
+  const diffDays = Math.max(0, Math.floor((main.setHours(0, 0, 0, 0) - ts.setHours(0, 0, 0, 0)) / dayMs))
+  if (diffDays === 0) return labels.today
+  if (diffDays === 1) return labels.yesterday
+  return labels.daysAgo(diffDays)
+}
+
 export function formatClock(iso: string, locale: string, ios = false): string {
   const d = new Date(iso)
   const twelveHour = locale.startsWith('en-US') || locale === 'en' || locale.startsWith('en-CA')

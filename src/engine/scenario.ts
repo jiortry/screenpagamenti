@@ -12,6 +12,8 @@ import type {
 import { sampleEurAmount, sampleFeeEur } from './amounts.ts'
 import { sampleDevice, sampleFontScale } from './devices.ts'
 import { pickupPoint, pickInstitution } from './institutions.ts'
+import { brandProfile } from './brands.ts'
+import { accountBalance, sampleLedger, shouldShowActivity } from './ledger.ts'
 import {
   pickupCode,
   synthAccount,
@@ -174,8 +176,11 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   const fontScale = sampleFontScale(rng, device.family)
   const themeId = pickTheme(rng, category)
   const layoutId = pickLayout(category)
-  const appearance = pickAppearance(rng, themeId, device.family)
   const institution = pickInstitution(rng, category, locale.id)
+  const brand = brandProfile(institution)
+  const appearance = brand.preferDark
+    ? 'dark'
+    : pickAppearance(rng, themeId, device.family)
   const { sender, recipient } = synthPair(rng, locale.id)
   const amountEur = sampleEurAmount(rng)
   const feeEur = sampleFeeEur(rng, category, amountEur)
@@ -277,6 +282,26 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   if (category === 'card_to_card') {
     scenario.cardFrom = synthCardMask(rng)
     scenario.cardTo = synthCardMask(rng)
+  }
+
+  const mainOutgoing =
+    status === 'sent' ||
+    status === 'completed' ||
+    status === 'processing' ||
+    status === 'pending' ||
+    status === 'scheduled' ||
+    status === 'confirmed' ||
+    status === 'failed' ||
+    status === 'cancelled'
+
+  if (shouldShowActivity(rng, layoutId)) {
+    const ledger = sampleLedger(rng, locale.id, scenario.timestamp, amountEur, category)
+    scenario.recentActivity = ledger
+    scenario.accountBalance = accountBalance(seed, amountEur, ledger, mainOutgoing)
+    scenario.visual.showBalance = true
+  } else if (chance(rng, 0.55)) {
+    scenario.accountBalance = accountBalance(seed, amountEur, [], mainOutgoing)
+    scenario.visual.showBalance = true
   }
 
   return scenario

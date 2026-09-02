@@ -1,8 +1,9 @@
 import type { Scenario } from '../types.ts'
+import { brandProfile, brandedTheme } from '../engine/brands.ts'
 import { isCryptoQuote } from '../engine/math.ts'
 import { formatDateTime, formatFiat, formatQuote } from '../engine/format.ts'
 import { CRYPTO_LOGOS, carrierLogo } from '../engine/logos.ts'
-import { scriptFont, themeTokens } from '../engine/themes.ts'
+import { scriptFont, themeTokens, type ThemeTokens } from '../engine/themes.ts'
 import { methodKey, statusKey, t, titleKey } from '../i18n/catalog.ts'
 import {
   Actions,
@@ -12,11 +13,16 @@ import {
   Chip,
   CryptoLogo,
   Monogram,
+  RecentActivity,
   Row,
   statusTint,
   SynthQr,
 } from './bits.tsx'
 import { NavChrome, StatusChrome } from './chrome.tsx'
+
+function screenTheme(s: Scenario): ThemeTokens {
+  return brandedTheme(themeTokens(s.themeId, s.appearance), s.institution, s.appearance)
+}
 
 function CheckGlyph({ color }: { color: string }) {
   return (
@@ -44,7 +50,7 @@ function CoinGlyph({ kind }: { kind: string }) {
 }
 
 export function PaymentScreen({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const font = scriptFont(s.locale, theme.font)
   const chrome =
     s.device.family === 'iphone'
@@ -105,9 +111,12 @@ export function PaymentScreen({ s }: { s: Scenario }) {
 }
 
 function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
+  const brand = brandProfile(s.institution)
   const loc = s.locale
-  const bal = Math.round((s.amountEur * 2.4 + (s.seed % 1700) + 420) * 100) / 100
+  const bal = s.accountBalance ?? Math.round((s.amountEur * 2.4 + (s.seed % 1700) + 420) * 100) / 100
+  const headerBg = brand.headerBg
+  const headerText = brand.headerText
   return (
     <div
       style={{
@@ -116,20 +125,26 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 8,
+        marginInline: -4,
+        marginTop: -2,
+        padding: headerBg ? '8px 10px' : undefined,
+        borderRadius: headerBg ? theme.radius + 2 : undefined,
+        background: headerBg,
+        color: headerBg ? headerText : undefined,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <AppLogo src={s.institution.logo} alt={s.institution.name} />
+        <AppLogo institution={s.institution} alt={s.institution.name} size={38} />
         <div>
           <div style={{ fontWeight: 800, fontSize: '0.95em' }}>{s.institution.name}</div>
           {withBalance && s.visual.showBalance && (
-            <div style={{ color: theme.muted, fontSize: '0.75em' }}>
+            <div style={{ opacity: 0.88, fontSize: '0.75em' }}>
               {t(loc, 'available')} {formatFiat(bal, 'EUR', s.bcp47)}
             </div>
           )}
         </div>
       </div>
-      <Chip theme={theme} color={statusTint(s.status, theme)}>
+      <Chip theme={theme} color={headerBg ? headerText : statusTint(s.status, theme)}>
         {t(loc, statusKey(s.status))}
       </Chip>
     </div>
@@ -137,7 +152,7 @@ function Header({ s, withBalance }: { s: Scenario; withBalance?: boolean }) {
 }
 
 function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolean }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const c = s.conversion
   const loc = s.locale
   const primary = primaryCrypto && isCryptoQuote(c.quote_currency)
@@ -174,7 +189,7 @@ function AmountBlock({ s, primaryCrypto }: { s: Scenario; primaryCrypto?: boolea
 }
 
 function HeroLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   const person = s.status === 'received' ? s.sender : s.recipient
@@ -210,13 +225,14 @@ function HeroLayout({ s }: { s: Scenario }) {
         {s.feeEur > 0 && <Row label={t(loc, 'fee')} value={formatFiat(s.feeEur, 'EUR', s.bcp47)} theme={theme} />}
       </div>
       {s.statusReason && <p style={{ color: tint, fontSize: '0.85em', margin: 0 }}>{s.statusReason}</p>}
+      <RecentActivity s={s} theme={theme} />
       <Actions s={s} theme={theme} done={t(loc, 'done')} share={t(loc, 'share')} />
     </>
   )
 }
 
 function CryptoLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   const conf = s.status === 'confirmed' || s.status === 'completed' ? '12/12' : s.status === 'pending' ? '2/12' : '0/12'
@@ -248,13 +264,14 @@ function CryptoLayout({ s }: { s: Scenario }) {
         <Row label={t(loc, 'note')} value={s.note} theme={theme} />
       </div>
       {s.statusReason && <p style={{ color: tint, fontSize: '0.85em', margin: 0 }}>{s.statusReason}</p>}
+      <RecentActivity s={s} theme={theme} />
       <Actions s={s} theme={theme} done={t(loc, 'done')} share={t(loc, 'saveReceipt')} />
     </>
   )
 }
 
 function BankLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   const paper = s.visual.bgTreatment === 'paper'
@@ -296,13 +313,14 @@ function BankLayout({ s }: { s: Scenario }) {
         <Row label={t(loc, 'note')} value={s.note} theme={theme} />
       </div>
       {s.statusReason && <p style={{ color: tint, fontSize: '0.85em', margin: 0 }}>{s.statusReason}</p>}
+      <RecentActivity s={s} theme={theme} />
       <Actions s={s} theme={theme} done={t(loc, 'done')} share={t(loc, 'saveReceipt')} />
     </>
   )
 }
 
 function RemitLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   return (
@@ -337,7 +355,7 @@ function RemitLayout({ s }: { s: Scenario }) {
 }
 
 function TopupLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   return (
@@ -346,7 +364,14 @@ function TopupLayout({ s }: { s: Scenario }) {
       <div style={{ textAlign: 'center', marginTop: s.visual.cardOffset }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           {s.operator && carrierLogo(s.operator) && (
-            <AppLogo src={carrierLogo(s.operator)!} alt={s.operator} size={40} />
+            <img
+              src={carrierLogo(s.operator)}
+              alt={s.operator}
+              width={36}
+              height={36}
+              style={{ objectFit: 'contain', borderRadius: 10, background: '#fff', padding: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }}
+              draggable={false}
+            />
           )}
           <Chip theme={theme}>{s.operator}</Chip>
         </div>
@@ -370,7 +395,7 @@ function TopupLayout({ s }: { s: Scenario }) {
 }
 
 function CashLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   return (
@@ -409,16 +434,16 @@ function CashLayout({ s }: { s: Scenario }) {
 }
 
 function CardsLayout({ s }: { s: Scenario }) {
-  const theme = themeTokens(s.themeId, s.appearance)
+  const theme = screenTheme(s)
   const loc = s.locale
   const tint = statusTint(s.status, theme)
   return (
     <>
       <Header s={s} withBalance />
       <div style={{ display: 'grid', gap: 10, marginTop: s.visual.cardOffset }}>
-        <CardFace mask={s.cardFrom ?? '•••• 0000'} name={s.sender.full} theme={theme} tone="from" brand={s.institution.logo} />
+        <CardFace mask={s.cardFrom ?? '•••• 0000'} name={s.sender.full} theme={theme} tone="from" brand={s.institution.icon ?? s.institution.logo} />
         <div style={{ textAlign: 'center', color: theme.muted, fontWeight: 700, fontSize: '0.85em' }}>↓</div>
-        <CardFace mask={s.cardTo ?? '•••• 0000'} name={s.recipient.full} theme={theme} tone="to" brand={s.institution.logo} />
+        <CardFace mask={s.cardTo ?? '•••• 0000'} name={s.recipient.full} theme={theme} tone="to" brand={s.institution.icon ?? s.institution.logo} />
       </div>
       <AmountBlock s={s} />
       <div style={{ background: theme.surface, borderRadius: theme.radius + 4, padding: 12 }}>
@@ -430,6 +455,7 @@ function CardsLayout({ s }: { s: Scenario }) {
         <Row label={t(loc, 'note')} value={s.note} theme={theme} />
       </div>
       {s.statusReason && <p style={{ color: tint, fontSize: '0.85em', margin: 0 }}>{s.statusReason}</p>}
+      <RecentActivity s={s} theme={theme} />
       <Actions s={s} theme={theme} done={t(loc, 'done')} share={t(loc, 'saveReceipt')} />
     </>
   )

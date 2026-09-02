@@ -76,6 +76,12 @@ export type MsgKey =
   | 'confirmations'
   | 'expires'
   | 'carrier'
+  | 'recentActivity'
+  | 'incoming'
+  | 'outgoing'
+  | 'today'
+  | 'yesterday'
+  | 'daysAgo'
 
 export type Messages = Record<MsgKey, string>
 
@@ -155,6 +161,12 @@ const en: Messages = {
   confirmations: 'Confirmations',
   expires: 'Expires',
   carrier: '',
+  recentActivity: 'Recent activity',
+  incoming: 'Incoming',
+  outgoing: 'Outgoing',
+  today: 'Today',
+  yesterday: 'Yesterday',
+  daysAgo: '{n} days ago',
 }
 
 const es: Messages = {
@@ -540,6 +552,12 @@ const it: Messages = {
   methodAirtime: 'Ricarica telefonica',
   confirmations: 'Conferme',
   expires: 'Scade',
+  recentActivity: 'Movimenti recenti',
+  incoming: 'Entrata',
+  outgoing: 'Uscita',
+  today: 'Oggi',
+  yesterday: 'Ieri',
+  daysAgo: '{n} giorni fa',
 }
 
 const ru: Messages = {

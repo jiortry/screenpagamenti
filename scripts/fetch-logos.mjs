@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Scarica loghi ufficiali da Simple Icons e Wikimedia Commons.
+ * Scarica loghi ufficiali da Simple Icons, Wikimedia e icone app ad alta risoluzione.
  * Esegui: node scripts/fetch-logos.mjs
  */
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -9,11 +9,14 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = join(__dirname, '../public/logos')
+const ICONS = join(OUT, 'icons')
 const SI = 'https://cdn.jsdelivr.net/npm/simple-icons@14.2.0/icons'
+const WVL = 'https://cdn.worldvectorlogo.com/logos'
+const GICON = (domain) =>
+  `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`
 
 /** @type {{ file: string; url: string }[]} */
 const LOGOS = [
-  // Simple Icons — banche e fintech
   { file: 'chase.svg', url: `${SI}/chase.svg` },
   { file: 'bankofamerica.svg', url: `${SI}/bankofamerica.svg` },
   { file: 'wellsfargo.svg', url: `${SI}/wellsfargo.svg` },
@@ -24,7 +27,6 @@ const LOGOS = [
   { file: 'fineco.svg', url: `${SI}/fineco.svg` },
   { file: 'barclays.svg', url: `${SI}/barclays.svg` },
   { file: 'hsbc.svg', url: `${SI}/hsbc.svg` },
-  // Wallet / P2P / remit
   { file: 'paypal.svg', url: `${SI}/paypal.svg` },
   { file: 'applepay.svg', url: `${SI}/applepay.svg` },
   { file: 'googlepay.svg', url: `${SI}/googlepay.svg` },
@@ -33,19 +35,15 @@ const LOGOS = [
   { file: 'wise.svg', url: `${SI}/wise.svg` },
   { file: 'westernunion.svg', url: `${SI}/westernunion.svg` },
   { file: 'moneygram.svg', url: `${SI}/moneygram.svg` },
-  // Crypto exchange
   { file: 'binance.svg', url: `${SI}/binance.svg` },
   { file: 'coinbase.svg', url: `${SI}/coinbase.svg` },
-  // Crypto asset
   { file: 'bitcoin.svg', url: `${SI}/bitcoin.svg` },
   { file: 'ethereum.svg', url: `${SI}/ethereum.svg` },
   { file: 'tether.svg', url: `${SI}/tether.svg` },
   { file: 'monero.svg', url: `${SI}/monero.svg` },
   { file: 'ton.svg', url: `${SI}/ton.svg` },
-  // Carte
   { file: 'visa.svg', url: `${SI}/visa.svg` },
   { file: 'mastercard.svg', url: `${SI}/mastercard.svg` },
-  // Operatori
   { file: 'vodafone.svg', url: `${SI}/vodafone.svg` },
   { file: 'orange.svg', url: `${SI}/orange.svg` },
   { file: 'verizon.svg', url: `${SI}/verizon.svg` },
@@ -55,29 +53,71 @@ const LOGOS = [
   { file: 'movistar.svg', url: `${SI}/movistar.svg` },
   { file: 'jio.svg', url: `${SI}/jio.svg` },
   { file: 'airtel.svg', url: `${SI}/airtel.svg` },
-  // Wikimedia Commons (Special:FilePath risolve l'URL corretto)
   { file: 'intesa-sanpaolo.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Intesa_Sanpaolo_logo.svg' },
-  { file: 'unicredit.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/UniCredit_logo.svg' },
   { file: 'bnp-paribas.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/BNP_Paribas.svg' },
   { file: 'societe-generale.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Soci%C3%A9t%C3%A9_G%C3%A9n%C3%A9rale.svg' },
   { file: 'santander.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Banco_Santander_Logotipo.svg' },
-  { file: 'bbva.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/BBVA_Logo.svg' },
-  { file: 'ubs.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/UBS_Logo.svg' },
-  { file: 'kraken.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Kraken-logo-purple.svg' },
-  { file: 'crypto-com.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Crypto.com_logo.svg' },
-  { file: 'remitly.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Remitly_logo.svg' },
-  { file: 'bcr.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/BCR_logo.svg' },
-  { file: 'brd.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/BRD_Groupe_Societe_Generale_logo.svg' },
   { file: 'standard-bank.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Standard_Bank_Logo.svg' },
-  { file: 'ecobank.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Ecobank_logo.svg' },
-  { file: 'tim.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/TIM_logo_2016.svg' },
-  { file: 'windtre.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/WindTre_logo.svg' },
-  { file: 'iliad.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Iliad_logo.svg' },
-  { file: 't-mobile.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/T-Mobile_USA_logo.svg' },
-  { file: 'mtn.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/MTN_Group_Limited_Logo.svg' },
-  { file: 'safaricom.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Safaricom_Logo.svg' },
-  { file: 'swisscom.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Swisscom_logo.svg' },
-  { file: 'sfr.svg', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/SFR_logo_2014.svg' },
+  { file: 'bbva.svg', url: `${WVL}/bbva.svg` },
+  { file: 'unicredit.svg', url: `${WVL}/unicredit-1.svg` },
+  { file: 'kraken.svg', url: `${WVL}/kraken-1.svg` },
+  { file: 'crypto-com.svg', url: `${WVL}/crypto-com-1.svg` },
+  { file: 'tim.svg', url: `${WVL}/tim-1.svg` },
+  { file: 'sfr.svg', url: `${WVL}/sfr-1.svg` },
+  { file: 't-mobile.svg', url: `${WVL}/t-mobile-1.svg` },
+  { file: 'safaricom.svg', url: `${WVL}/safaricom.svg` },
+  { file: 'swisscom.svg', url: `${WVL}/swisscom.svg` },
+  { file: 'windtre.png', url: GICON('windtre.it') },
+  { file: 'iliad.png', url: GICON('iliad.it') },
+  { file: 'ubs.png', url: GICON('ubs.com') },
+  { file: 'remitly.png', url: GICON('remitly.com') },
+  { file: 'bcr.png', url: GICON('bcr.ro') },
+  { file: 'brd.png', url: GICON('brd.ro') },
+  { file: 'ecobank.png', url: GICON('ecobank.com') },
+  { file: 'mtn.png', url: GICON('mtn.com') },
+]
+
+/** @type {{ id: string; domain: string }[]} */
+const APP_ICONS = [
+  { id: 'intesa-sanpaolo', domain: 'intesasanpaolo.com' },
+  { id: 'unicredit', domain: 'unicredit.it' },
+  { id: 'fineco', domain: 'finecobank.com' },
+  { id: 'chase', domain: 'chase.com' },
+  { id: 'bank-of-america', domain: 'bankofamerica.com' },
+  { id: 'wells-fargo', domain: 'wellsfargo.com' },
+  { id: 'revolut', domain: 'revolut.com' },
+  { id: 'n26', domain: 'n26.com' },
+  { id: 'deutsche-bank', domain: 'db.com' },
+  { id: 'commerzbank', domain: 'commerzbank.com' },
+  { id: 'bnp-paribas', domain: 'bnpparibas.com' },
+  { id: 'societe-generale', domain: 'societegenerale.com' },
+  { id: 'bcr', domain: 'bcr.ro' },
+  { id: 'brd', domain: 'brd.ro' },
+  { id: 'barclays', domain: 'barclays.com' },
+  { id: 'hsbc', domain: 'hsbc.com' },
+  { id: 'santander', domain: 'santander.com' },
+  { id: 'bbva', domain: 'bbva.com' },
+  { id: 'ubs', domain: 'ubs.com' },
+  { id: 'standard-bank', domain: 'standardbank.com' },
+  { id: 'ecobank', domain: 'ecobank.com' },
+  { id: 'paypal', domain: 'paypal.com' },
+  { id: 'apple-pay', domain: 'apple.com' },
+  { id: 'google-pay', domain: 'google.com' },
+  { id: 'venmo', domain: 'venmo.com' },
+  { id: 'cash-app', domain: 'cash.app' },
+  { id: 'wise', domain: 'wise.com' },
+  { id: 'western-union', domain: 'westernunion.com' },
+  { id: 'remitly', domain: 'remitly.com' },
+  { id: 'binance', domain: 'binance.com' },
+  { id: 'coinbase', domain: 'coinbase.com' },
+  { id: 'kraken', domain: 'kraken.com' },
+  { id: 'crypto-com', domain: 'crypto.com' },
+  { id: 'tim', domain: 'tim.it' },
+  { id: 'vodafone', domain: 'vodafone.com' },
+  { id: 'orange', domain: 'orange.com' },
+  { id: 'moneygram', domain: 'moneygram.com' },
+  { id: 'visa', domain: 'visa.com' },
+  { id: 'mastercard', domain: 'mastercard.com' },
 ]
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -89,11 +129,25 @@ async function fetchLogo({ file, url }) {
   })
   if (!res.ok) throw new Error(`${file}: HTTP ${res.status} from ${url}`)
   const buf = Buffer.from(await res.arrayBuffer())
+  const head = buf.toString('utf8', 0, 200)
+  if (file.endsWith('.svg') && !head.includes('<svg') && !head.includes('<?xml')) {
+    throw new Error(`${file}: not a valid SVG`)
+  }
   await writeFile(join(OUT, file), buf)
   console.log(`✓ ${file}`)
 }
 
+async function fetchAppIcon({ id, domain }) {
+  const url = GICON(domain)
+  const res = await fetch(url, { redirect: 'follow' })
+  if (!res.ok) throw new Error(`${id}: HTTP ${res.status}`)
+  const buf = Buffer.from(await res.arrayBuffer())
+  await writeFile(join(ICONS, `${id}.png`), buf)
+  console.log(`✓ icons/${id}.png`)
+}
+
 await mkdir(OUT, { recursive: true })
+await mkdir(ICONS, { recursive: true })
 const failed = []
 for (const logo of LOGOS) {
   try {
@@ -105,9 +159,21 @@ for (const logo of LOGOS) {
     if (logo.url.includes('wikimedia')) await sleep(3000)
   }
 }
+
+console.log('\nApp icons…')
+for (const inst of APP_ICONS) {
+  try {
+    await fetchAppIcon(inst)
+    await sleep(350)
+  } catch (e) {
+    failed.push({ file: `icons/${inst.id}.png`, error: String(e) })
+    console.error(`✗ icons/${inst.id}.png: ${e.message}`)
+  }
+}
+
 if (failed.length) {
-  console.error(`\n${failed.length} logo falliti su ${LOGOS.length}`)
+  console.error(`\n${failed.length} download falliti`)
   process.exitCode = 1
 } else {
-  console.log(`\n${LOGOS.length} loghi scaricati in public/logos/`)
+  console.log(`\n${LOGOS.length} loghi + ${APP_ICONS.length} icone app in public/logos/`)
 }

@@ -1,6 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { Scenario, TxStatus } from '../types.ts'
+import type { Institution, LedgerEntry, Scenario, TxStatus } from '../types.ts'
 import type { ThemeTokens } from '../engine/themes.ts'
+import { brandProfile } from '../engine/brands.ts'
+import { formatFiat, formatRelativeActivity } from '../engine/format.ts'
+import { t, tf } from '../i18n/catalog.ts'
 
 export function statusTint(status: TxStatus, theme: ThemeTokens): string {
   if (status === 'failed' || status === 'cancelled') return theme.danger
@@ -40,36 +43,45 @@ export function Monogram({
 }
 
 export function AppLogo({
-  src,
+  institution,
   alt,
   size = 36,
-  pad = 3,
+  pad,
+  bg,
+  radius,
 }: {
-  src: string
+  institution: Institution
   alt: string
   size?: number
   pad?: number
+  bg?: string
+  radius?: number
 }) {
+  const brand = brandProfile(institution)
+  const src = brand.icon ?? institution.icon ?? institution.logo
+  const logoBg = bg ?? brand.logoBg
+  const logoPad = pad ?? brand.logoPad
+  const logoRadius = radius ?? brand.logoRadius
   return (
     <div
       style={{
         width: size,
         height: size,
-        borderRadius: size * 0.22,
-        background: '#fff',
+        borderRadius: logoRadius,
+        background: logoBg,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.14)',
         overflow: 'hidden',
       }}
     >
       <img
         src={src}
         alt={alt}
-        width={size - pad * 2}
-        height={size - pad * 2}
+        width={size - logoPad * 2}
+        height={size - logoPad * 2}
         style={{ objectFit: 'contain', display: 'block' }}
         draggable={false}
       />
@@ -100,6 +112,80 @@ export function CryptoLogo({ src, alt, size = 46 }: { src: string; alt: string; 
         style={{ objectFit: 'contain', display: 'block' }}
         draggable={false}
       />
+    </div>
+  )
+}
+
+export function RecentActivity({
+  s,
+  theme,
+}: {
+  s: Scenario
+  theme: ThemeTokens
+}) {
+  if (!s.recentActivity?.length) return null
+  const loc = s.locale
+  const compact = s.device.height < 760
+  const items = compact ? s.recentActivity.slice(0, 2) : s.recentActivity.slice(0, 4)
+  return (
+    <div
+      style={{
+        background: theme.surface,
+        borderRadius: theme.radius + 4,
+        padding: '10px 12px',
+        border: `1px solid ${theme.line}`,
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: '0.82em', marginBottom: 6, color: theme.muted }}>
+        {t(loc, 'recentActivity')}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {items.map((entry) => (
+          <ActivityRow key={entry.id} entry={entry} s={s} theme={theme} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ActivityRow({
+  entry,
+  s,
+  theme,
+}: {
+  entry: LedgerEntry
+  s: Scenario
+  theme: ThemeTokens
+}) {
+  const loc = s.locale
+  const incoming = entry.direction === 'in'
+  const tint = incoming ? theme.success : theme.text
+  const when = formatRelativeActivity(entry.timestamp, s.timestamp, s.bcp47, {
+    today: t(loc, 'today'),
+    yesterday: t(loc, 'yesterday'),
+    daysAgo: (n) => tf(loc, 'daysAgo', n),
+  })
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        paddingBlock: 5,
+        borderBottom: `1px solid ${theme.line}`,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 650, fontSize: '0.86em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {entry.label}
+        </div>
+        <div style={{ color: theme.muted, fontSize: '0.72em' }}>{when}</div>
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '0.86em', color: tint, whiteSpace: 'nowrap' }}>
+        {incoming ? '+' : '−'}
+        {formatFiat(entry.amountEur, 'EUR', s.bcp47)}
+      </div>
     </div>
   )
 }

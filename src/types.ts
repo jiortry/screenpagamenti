@@ -173,6 +173,16 @@ export type Institution = {
   region: BankRegion
   kind: 'bank' | 'wallet' | 'p2p' | 'remit' | 'crypto' | 'telco' | 'cash' | 'cards'
   logo: string
+  icon?: string
+  domain?: string
+}
+
+export type LedgerEntry = {
+  id: string
+  direction: 'in' | 'out'
+  label: string
+  amountEur: number
+  timestamp: string
 }
 
 export type Scenario = {
@@ -221,4 +231,6 @@ export type Scenario = {
   clock: string
   signal: number
   carrier: string
+  accountBalance?: number
+  recentActivity?: LedgerEntry[]
 }
