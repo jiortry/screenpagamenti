@@ -224,10 +224,11 @@ export function ChatPayStudio({ onMode }: { onMode: (m: StudioMode) => void }) {
         <p className="eyebrow">Chat + payments</p>
         <h1>Review chat</h1>
         <p className="lede">
-          Gemini 2.5 Flash writes an English Telegram review. The bank screen is generated, painted
-          over with a red editor brush, exported to PNG, then dropped in as the only photo. Names,
-          references, notes, phones and other identifiers are scribbled out, with a couple of letters
-          left visible. Reactions show on about 4% of messages.
+          Gemini 2.5 Flash writes an English Telegram DM: the other person (white) received the
+          money, sends the bank screenshot and thanks; you (green) sent it and say you are welcome.
+          The receipt is painted with a red editor brush, exported to PNG, then dropped in as the
+          only photo. Names, references, notes, phones and other identifiers are scribbled out, with
+          a couple of letters left visible. Reactions show on about 4% of messages.
         </p>
 
         <div className={`rate-card ${blocked ? 'bad' : 'ok'}`}>

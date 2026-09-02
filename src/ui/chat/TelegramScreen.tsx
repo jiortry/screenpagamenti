@@ -467,16 +467,18 @@ function PhotoBody({
   )
 }
 
-function Reactions({ items }: { items: { emoji: string; count: number }[] }) {
+function Reactions({ items, mine }: { items: { emoji: string; count: number }[]; mine: boolean }) {
   return (
     <span
       style={{
         position: 'absolute',
-        right: 10,
         bottom: -12,
+        // Incoming (white): sit on the right of the bubble. Outgoing (green): inner/left corner.
+        ...(mine ? { left: 8, right: 'auto' } : { left: '100%', right: 'auto', marginLeft: -6 }),
         display: 'flex',
         gap: 4,
         zIndex: 2,
+        pointerEvents: 'none',
       }}
     >
       {items.map((r) => (
@@ -623,7 +625,7 @@ function MessageRow({
               seed={s.seed + iHash(m.id)}
             />
           )}
-          {m.reactions && <Reactions items={m.reactions} />}
+          {m.reactions && <Reactions items={m.reactions} mine={mine} />}
         </BubbleShell>
       </div>
     </div>
