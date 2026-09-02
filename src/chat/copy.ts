@@ -707,7 +707,8 @@ const BY_LOCALE: Partial<Record<LocaleId, Script[]>> = {
 }
 
 export function scriptsFor(locale: LocaleId): Script[] {
-  return BY_LOCALE[locale] ?? BY_LOCALE.en ?? EN
+  const all = BY_LOCALE[locale] ?? BY_LOCALE.en ?? EN
+  return all.filter((s) => s.kind !== 'group')
 }
 
 export const NICKS: Partial<Record<LocaleId, string[]>> = {
