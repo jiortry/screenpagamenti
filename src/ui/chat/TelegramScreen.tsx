@@ -207,6 +207,25 @@ function TextBody({
           </span>
         </div>
       )}
+      <span style={{ fontSize: 16, lineHeight: 1.28, wordBreak: 'break-word', color: mine ? skin.outFg : skin.inFg }}>
+        {m.text}
+        <span style={{ display: 'inline-block', width: m.status ? 54 : 36, height: 11 }} />
+      </span>
+      {m.link && (
+        <div
+          style={{
+            marginTop: 6,
+            borderLeft: `2.5px solid ${mine ? skin.replyBar : skin.accent}`,
+            padding: '4px 8px',
+            background: mine ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: 4,
+          }}
+        >
+          <div style={{ fontSize: 12, opacity: 0.7 }}>{m.link.site}</div>
+          <div style={{ fontSize: 14, fontWeight: 650 }}>{m.link.title}</div>
+          <div style={{ fontSize: 13, opacity: 0.78 }}>{m.link.desc}</div>
+        </div>
+      )}
       <Meta m={m} skin={skin} mine={mine} editedLabel={ui.edited} />
     </>
   )
