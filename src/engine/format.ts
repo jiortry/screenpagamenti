@@ -38,11 +38,21 @@ export function formatDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso))
 }
 
-export function formatClock(iso: string, locale: string): string {
+export function formatClock(iso: string, locale: string, ios = false): string {
+  const d = new Date(iso)
+  const twelveHour = locale.startsWith('en-US') || locale === 'en' || locale.startsWith('en-CA')
+  if (ios || twelveHour) {
+    if (twelveHour) {
+      const h = d.getHours() % 12 || 12
+      return `${h}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
   return new Intl.DateTimeFormat(locale, {
     hour: 'numeric',
     minute: '2-digit',
-  }).format(new Date(iso))
+    hour12: false,
+  }).format(d)
 }
 
 export function formatRate(

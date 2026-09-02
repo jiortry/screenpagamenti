@@ -261,8 +261,8 @@ export function CardFace({
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72em', opacity: 0.9 }}>
-        <span>CIRCUIT</span>
-        <span>SYNTH</span>
+        <span>DEBIT</span>
+        <span>{mask.slice(-4)}</span>
       </div>
       <div
         style={{

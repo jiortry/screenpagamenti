@@ -22,6 +22,7 @@ import {
   transactionId,
 } from './identifiers.ts'
 import { sampleLocale } from './languages.ts'
+import { pickCarrier } from './carriers.ts'
 import { convertFromEur, isCryptoQuote } from './math.ts'
 import { synthPair } from './names.ts'
 import { chance, pick, pickWeighted, randInt, type Rng } from './random.ts'
@@ -88,7 +89,7 @@ function networkName(q: CryptoQuote): string {
     case 'BTC':
       return 'Bitcoin'
     case 'USDT':
-      return 'USDT TRC-SYNTH'
+      return 'USDT'
     case 'ETH':
       return 'Ethereum'
     case 'XMR':
@@ -165,10 +166,6 @@ function visuals(rng: Rng, layout: LayoutId, fontScale: number): VisualVars {
   }
 }
 
-function operators(rng: Rng): string {
-  return pick(rng, ['Nexora Mobile', 'VoltSim', 'AetherTel', 'Luma Air'])
-}
-
 export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenario {
   const locale = sampleLocale(rng)
   const category = pickWeighted(rng, CATEGORIES).value
@@ -211,6 +208,9 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
   if (status === 'failed') statusReason = pick(rng, FAIL_REASONS[locale.id])
   if (status === 'cancelled') statusReason = pick(rng, CANCEL_REASONS[locale.id])
 
+  const carrier = pickCarrier(rng, locale.id, institution.region)
+  const ios = device.family === 'iphone'
+
   const scenario: Scenario = {
     seed,
     synthetic: true,
@@ -241,8 +241,9 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     etaLabel: etaFor(rng, status, locale.id, category),
     visual: visuals(rng, layoutId, fontScale),
     battery: randInt(rng, 18, 100),
-    clock: formatClock(ts.toISOString(), locale.bcp47),
+    clock: formatClock(ts.toISOString(), locale.bcp47, ios),
     signal: randInt(rng, 2, 4),
+    carrier,
   }
 
   if (
@@ -266,8 +267,8 @@ export function createScenario(rng: Rng, rates: RateBook, seed: number): Scenari
     scenario.accountTo = synthAccount(rng)
   }
   if (category === 'mobile_recharge') {
-    scenario.phone = synthPhone(rng)
-    scenario.operator = operators(rng)
+    scenario.phone = synthPhone(rng, institution.region)
+    scenario.operator = carrier
   }
   if (category === 'cash_transfer' || category === 'international_transfer') {
     scenario.pickupCode = pickupCode(rng)

@@ -38,7 +38,7 @@ for (let i = 0; i < 200; i++) {
     console.error(q.issues)
   }
   locales.set(s.locale, (locales.get(s.locale) ?? 0) + 1)
-  if (!s.transactionId.includes('SYNTH')) throw new Error('marker')
+  if (!s.carrier) throw new Error('carrier')
 }
 if (rejected > 0) throw new Error(`qc ${rejected}`)
 const en = (locales.get('en') ?? 0) / 200

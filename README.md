@@ -1,8 +1,8 @@
 # Synthetic payment screen generator
 
-Browser studio that builds **fictional** mobile finance mockups for UI, localization, and dataset work.
+Browser studio that builds **original** mobile finance mockups for UI, localization, and dataset work.
 
-It does **not** copy real bank or wallet apps, logos, or trademarks. Every transaction identifier includes a `SYNTH` marker. Live EUR/crypto rates are required; if they cannot be fetched, generation is blocked.
+It does **not** copy PayPal, Binance, or bank apps, and it does not use their logos. Status bars use real national mobile carriers (TIM, Verizon, Orange, MTN, …). Live EUR/crypto rates are required; if they cannot be fetched, generation is blocked.
 
 ```bash
 npm install

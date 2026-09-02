@@ -14,24 +14,10 @@ export function qcScenario(s: Scenario, rates: RateBook): QcResult {
   const issues: QcIssue[] = []
 
   if (!s.synthetic) issues.push({ code: 'synthetic', detail: 'Missing synthetic flag' })
-  if (!s.transactionId.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'Transaction id missing SYNTH marker' })
+  if (!s.transactionId || s.transactionId.length < 8) {
+    issues.push({ code: 'id', detail: 'Transaction id too short' })
   }
-  if (s.ibanFrom && !s.ibanFrom.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'IBAN missing SYNTH marker' })
-  }
-  if (s.ibanTo && !s.ibanTo.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'IBAN missing SYNTH marker' })
-  }
-  if (s.walletFrom && !s.walletFrom.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'Wallet missing SYNTH marker' })
-  }
-  if (s.phone && !s.phone.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'Phone missing SYNTH marker' })
-  }
-  if (s.pickupCode && !s.pickupCode.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'Pickup code missing SYNTH marker' })
-  }
+  if (!s.carrier) issues.push({ code: 'carrier', detail: 'Missing carrier' })
 
   if (s.amountEur < 100 || s.amountEur > 4320) {
     issues.push({ code: 'amount', detail: `EUR amount out of range: ${s.amountEur}` })
@@ -106,8 +92,8 @@ export function qcLayout(s: Scenario, el: HTMLElement): QcResult {
   }
   const text = (el.innerText || '').trim()
   if (text.length < 40) issues.push({ code: 'empty', detail: 'Screen text too sparse' })
-  if (!text.includes('SYNTH') && !s.transactionId.includes('SYNTH')) {
-    issues.push({ code: 'marker', detail: 'SYNTH marker not visible' })
+  if (!text.includes(s.transactionId)) {
+    issues.push({ code: 'id', detail: 'Transaction id not visible on screen' })
   }
   return { ok: issues.length === 0, issues }
 }

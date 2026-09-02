@@ -110,11 +110,11 @@ export function pickupPoint(rng: Rng, region: BankRegion): string {
     DE: ['Elbwacht Schalter 3', 'Rheinwald Punkt 1'],
     FR: ['Guichet Céleste 5', 'Lyre Point Relais 2'],
     RO: ['Orizont Ghiseu 1', 'Dunării Punct 4'],
-    GB: ['Thamesor Desk 7', 'Wharf Counter SYNTH'],
+    GB: ['Thamesor Desk 7', 'Wharf Counter 12'],
     ES: ['Iberline Ventanilla 3'],
     CH: ['Alpenor Guichet 1'],
     AF: ['Okun Harbor Desk', 'Nilebridge Counter 2', 'Savanna Pickup 6'],
-    INTL: ['Meridian Desk 11', 'Corridor Point SYNTH'],
+    INTL: ['Meridian Desk 11', 'Corridor Point 8'],
   }
   return pick(rng, places[region])
 }

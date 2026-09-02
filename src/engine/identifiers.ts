@@ -1,8 +1,6 @@
 import type { BankRegion, PaymentCategory } from '../types.ts'
 import { randInt, type Rng } from './random.ts'
 
-const SYNTH = 'SYNTH'
-
 function alnum(rng: Rng, n: number, alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'): string {
   let s = ''
   for (let i = 0; i < n; i++) s += alphabet[Math.floor(rng() * alphabet.length)]
@@ -15,13 +13,13 @@ function digits(rng: Rng, n: number): string {
   return s
 }
 
-export function transactionId(rng: Rng, category: PaymentCategory): string {
-  const tag = category.replace(/_/g, '').slice(0, 6).toUpperCase()
-  return `${SYNTH}-${tag}-${alnum(rng, 4)}-${digits(rng, 6)}`
+function hex(rng: Rng, n: number): string {
+  return alnum(rng, n, '0123456789abcdef')
 }
 
-export function referenceCode(rng: Rng): string {
-  return `RF-${SYNTH}-${digits(rng, 8)}`
+export function transactionId(rng: Rng, category: PaymentCategory): string {
+  const tag = category.replace(/_/g, '').slice(0, 4).toUpperCase()
+  return `${tag}-${alnum(rng, 6)}-${digits(rng, 4)}`
 }
 
 export function synthIban(rng: Rng, region: BankRegion): string {
@@ -42,34 +40,47 @@ export function synthIban(rng: Rng, region: BankRegion): string {
                   ? 'CH'
                   : region === 'US'
                     ? 'DE'
-                    : 'EU'
-  const body = `${SYNTH}${digits(rng, 10)}`
-  return `${cc}00${body}`
+                    : 'BE'
+  return `${cc}00${digits(rng, 14)}`
 }
 
 export function synthAccount(rng: Rng): string {
-  return `${SYNTH}-${digits(rng, 4)}-${digits(rng, 4)}`
+  return `${digits(rng, 4)} ${digits(rng, 4)} ${digits(rng, 4)}`
 }
 
 export function synthWallet(rng: Rng, network: string): string {
-  const core = alnum(rng, 22, '0123456789abcdef')
   switch (network) {
     case 'BTC':
-      return `SYNTH1btc${core.slice(0, 18)}`
+      return `bc1q${hex(rng, 6)}…${hex(rng, 4)}`
     case 'ETH':
     case 'USDT':
-      return `0xSYNTH${core}${alnum(rng, 10, '0123456789abcdef')}`
+      return `0x${hex(rng, 6)}…${hex(rng, 4)}`
     case 'TON':
-      return `EQ-SYNTH-${core.slice(0, 16)}`
+      return `EQ${alnum(rng, 6)}…${alnum(rng, 4)}`
     case 'XMR':
-      return `4SYNTH${core}${alnum(rng, 18, '0123456789abcdef')}`
+      return `4${hex(rng, 6)}…${hex(rng, 4)}`
     default:
-      return `SYNTH1${network.toLowerCase()}${core.slice(0, 16)}`
+      return `${network.toLowerCase()}:${hex(rng, 6)}…${hex(rng, 4)}`
   }
 }
 
-export function synthPhone(rng: Rng): string {
-  return `+000 ${digits(rng, 2)} SYNTH ${digits(rng, 4)}`
+export function synthPhone(rng: Rng, region: BankRegion): string {
+  switch (region) {
+    case 'IT':
+      return `+39 333 555 ${digits(rng, 4)}`
+    case 'US':
+      return `+1 555 010 ${digits(rng, 4)}`
+    case 'GB':
+      return `+44 7700 900${digits(rng, 3)}`
+    case 'DE':
+      return `+49 151 555${digits(rng, 5)}`
+    case 'FR':
+      return `+33 6 55 00 ${digits(rng, 2)} ${digits(rng, 2)}`
+    case 'AF':
+      return `+27 82 555 ${digits(rng, 4)}`
+    default:
+      return `+33 6 55 ${digits(rng, 2)} ${digits(rng, 2)} ${digits(rng, 2)}`
+  }
 }
 
 export function synthCardMask(rng: Rng): string {
@@ -77,5 +88,5 @@ export function synthCardMask(rng: Rng): string {
 }
 
 export function pickupCode(rng: Rng): string {
-  return `${SYNTH}-${digits(rng, 4)}-${alnum(rng, 4)}`
+  return `${digits(rng, 4)} ${digits(rng, 4)} ${alnum(rng, 2)}`
 }

@@ -170,7 +170,7 @@ export function Studio() {
             rates,
             count: gallery.length,
             notice:
-              'Fictional institutions and synthetic identifiers (SYNTH). Not affiliated with any bank or payment brand.',
+              'Original mockups with fictional institutions. Not affiliated with any bank or payment brand.',
           },
           null,
           2,
@@ -202,7 +202,7 @@ export function Studio() {
         <p className="eyebrow">Synthetic dataset studio</p>
         <h1>Payment screen generator</h1>
         <p className="lede">
-          Fictional institutions, synthetic names, and <code>SYNTH</code> markers in every identifier.
+          Original mockups, invented names, and real mobile carriers in the status bar.
           Live FX is required. If rates cannot be fetched, nothing is generated.
         </p>
 

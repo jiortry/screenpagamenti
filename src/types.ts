@@ -220,4 +220,5 @@ export type Scenario = {
   battery: number
   clock: string
   signal: number
+  carrier: string
 }
