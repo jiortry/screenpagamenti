@@ -73,11 +73,34 @@ export function formatRelativeActivity(
   return labels.daysAgo(diffDays)
 }
 
-export function formatClock(iso: string, locale: string, ios = false): string {
+export type ClockOpts = {
+  ios?: boolean
+  timezone?: string
+  clock24h?: boolean
+}
+
+export function formatClock(iso: string, locale: string, opts: ClockOpts | boolean = {}): string {
+  const o: ClockOpts = typeof opts === 'boolean' ? { ios: opts } : opts
   const d = new Date(iso)
-  const twelveHour = locale.startsWith('en-US') || locale === 'en' || locale.startsWith('en-CA')
-  if (ios || twelveHour) {
-    if (twelveHour) {
+  const twelveHour =
+    o.clock24h === false ||
+    (!o.clock24h &&
+      (locale.startsWith('en-US') ||
+        locale === 'en' ||
+        locale.startsWith('en-CA') ||
+        locale.startsWith('en-GB') ||
+        locale.startsWith('en-AU')))
+  const use12 = twelveHour && o.clock24h !== true
+  if (o.timezone) {
+    return new Intl.DateTimeFormat(locale, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: use12,
+      timeZone: o.timezone,
+    }).format(d)
+  }
+  if (o.ios || use12) {
+    if (use12) {
       const h = d.getHours() % 12 || 12
       return `${h}:${String(d.getMinutes()).padStart(2, '0')}`
     }
@@ -88,6 +111,22 @@ export function formatClock(iso: string, locale: string, ios = false): string {
     minute: '2-digit',
     hour12: false,
   }).format(d)
+}
+
+export function formatTxWhen(
+  iso: string,
+  mainIso: string,
+  locale: string,
+  labels: { minutesAgo: (n: number) => string; today: string },
+): string {
+  const ts = new Date(iso).getTime()
+  const main = new Date(mainIso).getTime()
+  const diffMin = Math.round((main - ts) / 60000)
+  if (diffMin >= 0 && diffMin < 60) return labels.minutesAgo(Math.max(1, diffMin))
+  const sameDay =
+    new Date(iso).toDateString() === new Date(mainIso).toDateString()
+  if (sameDay) return labels.today
+  return formatDateTime(iso, locale)
 }
 
 export function formatRate(
