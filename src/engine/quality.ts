@@ -95,6 +95,13 @@ export function qcLayout(s: Scenario, el: HTMLElement): QcResult {
   if (!text.includes(s.transactionId)) {
     issues.push({ code: 'id', detail: 'Transaction id not visible on screen' })
   }
+  const body = el.querySelector('[data-screen-body]') as HTMLElement | null
+  if (body && body.scrollHeight > body.clientHeight + 8) {
+    issues.push({
+      code: 'overflow',
+      detail: `content ${body.scrollHeight}px > ${body.clientHeight}px`,
+    })
+  }
   return { ok: issues.length === 0, issues }
 }
 

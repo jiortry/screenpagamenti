@@ -189,6 +189,46 @@ code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.skin-gallery {
+  padding: 28px 24px 64px;
+  min-height: 100svh;
+}
+
+.skin-gallery-head {
+  max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.skin-gallery h2 {
+  margin: 8px 0 14px;
+  color: var(--muted);
+}
+
+.skin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 16px;
+  margin-bottom: 36px;
+}
+
+.skin-phone {
+  margin: 0;
+}
+
+.skin-phone figcaption {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 650;
+}
+
+.skin-bezel {
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  background: #000;
+}
+
 @media (max-width: 1100px) {
   .studio {
     grid-template-columns: 1fr;

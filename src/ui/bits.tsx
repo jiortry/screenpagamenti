@@ -15,17 +15,19 @@ export function Monogram({
   letters,
   theme,
   size = 36,
+  circle,
 }: {
   letters: string
   theme: ThemeTokens
   size?: number
+  circle?: boolean
 }) {
   return (
     <div
       style={{
         width: size,
         height: size,
-        borderRadius: theme.radius,
+        borderRadius: circle ? '50%' : theme.radius,
         background: theme.accent,
         color: theme.buttonText,
         display: 'flex',
@@ -243,20 +245,39 @@ export function Row({
   value,
   theme,
   mono,
+  mode = 'rule',
 }: {
   label: string
   value: string
   theme: ThemeTokens
   mono?: boolean
+  mode?: 'rule' | 'stack' | 'space'
 }) {
+  if (mode === 'stack') {
+    return (
+      <div style={{ paddingBlock: 6 }}>
+        <div style={{ color: theme.muted, fontSize: '0.72em', fontWeight: 500, marginBottom: 2 }}>{label}</div>
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: '0.92em',
+            overflowWrap: 'anywhere',
+            fontFamily: mono ? 'ui-monospace, Menlo, monospace' : undefined,
+          }}
+        >
+          {value}
+        </div>
+      </div>
+    )
+  }
   return (
     <div
       style={{
         display: 'flex',
         justifyContent: 'space-between',
         gap: 12,
-        paddingBlock: 6,
-        borderBottom: `1px solid ${theme.line}`,
+        paddingBlock: mode === 'space' ? 8 : 6,
+        borderBottom: mode === 'rule' ? `1px solid ${theme.line}` : 'none',
         alignItems: 'flex-start',
       }}
     >
@@ -303,21 +324,25 @@ export function PrimaryButton({
   label,
   theme,
   wide,
+  radius,
+  compact,
 }: {
   label: string
   theme: ThemeTokens
   wide?: boolean
+  radius?: number
+  compact?: boolean
 }) {
   return (
     <div
       style={{
         background: theme.button,
         color: theme.buttonText,
-        borderRadius: theme.radius + 4,
-        padding: '12px 16px',
+        borderRadius: radius ?? theme.radius + 4,
+        padding: compact ? '10px 14px' : '12px 16px',
         textAlign: 'center',
         fontWeight: 700,
-        fontSize: '0.95em',
+        fontSize: compact ? '0.88em' : '0.95em',
         flex: wide ? 1 : undefined,
         boxShadow: 'none',
       }}
@@ -327,17 +352,27 @@ export function PrimaryButton({
   )
 }
 
-export function GhostButton({ label, theme }: { label: string; theme: ThemeTokens }) {
+export function GhostButton({
+  label,
+  theme,
+  radius,
+  compact,
+}: {
+  label: string
+  theme: ThemeTokens
+  radius?: number
+  compact?: boolean
+}) {
   return (
     <div
       style={{
         border: `1px solid ${theme.line}`,
         color: theme.text,
-        borderRadius: theme.radius + 4,
-        padding: '12px 16px',
+        borderRadius: radius ?? theme.radius + 4,
+        padding: compact ? '10px 14px' : '12px 16px',
         textAlign: 'center',
         fontWeight: 650,
-        fontSize: '0.9em',
+        fontSize: compact ? '0.84em' : '0.9em',
         flex: 1,
         background: theme.surface,
       }}
@@ -347,22 +382,40 @@ export function GhostButton({ label, theme }: { label: string; theme: ThemeToken
   )
 }
 
-export function Actions({ s, theme, done, share }: { s: Scenario; theme: ThemeTokens; done: string; share: string }) {
-  if (s.visual.buttonPlacement === 'split') {
+export function Actions({
+  s,
+  theme,
+  done,
+  share,
+  compact,
+}: {
+  s: Scenario
+  theme: ThemeTokens
+  done: string
+  share: string
+  compact?: boolean
+}) {
+  const ui = brandProfile(s.institution).ui
+  const radius = ui.pill ? 999 : theme.radius
+  if (ui.cta === 'split') {
     return (
-      <div style={{ display: 'flex', gap: 8 }}>
-        <GhostButton label={share} theme={theme} />
-        <PrimaryButton label={done} theme={theme} wide />
+      <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+        <GhostButton label={share} theme={theme} radius={radius} compact={compact} />
+        <PrimaryButton label={done} theme={theme} wide radius={radius} compact={compact} />
       </div>
     )
   }
-  if (s.visual.buttonPlacement === 'inline') {
-    return <PrimaryButton label={done} theme={theme} />
+  if (ui.cta === 'one') {
+    return (
+      <div style={{ marginTop: 'auto' }}>
+        <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} />
+      </div>
+    )
   }
   return (
-    <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <PrimaryButton label={done} theme={theme} />
-      <GhostButton label={share} theme={theme} />
+    <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
+      <PrimaryButton label={done} theme={theme} radius={radius} compact={compact} />
+      {!compact && <GhostButton label={share} theme={theme} radius={radius} compact={compact} />}
     </div>
   )
 }

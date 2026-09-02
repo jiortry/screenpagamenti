@@ -234,6 +234,12 @@ const FAMILIES: { family: DeviceFamily; weight: number; list: DeviceSpec[] }[] =
   { family: 'android-budget', weight: 12, list: BUDGET },
 ]
 
+const ALL_DEVICES: DeviceSpec[] = [...IPHONE, ...PIXEL, ...SAMSUNG, ...ANDROID, ...BUDGET]
+
+export function deviceById(id: string): DeviceSpec {
+  return ALL_DEVICES.find((d) => d.id === id) ?? IPHONE[0]
+}
+
 export function sampleDevice(rng: Rng): DeviceSpec {
   const total = FAMILIES.reduce((s, f) => s + f.weight, 0)
   let r = rng() * total

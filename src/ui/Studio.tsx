@@ -7,6 +7,7 @@ import { loadRates } from '../engine/rates.ts'
 import { createScenario } from '../engine/scenario.ts'
 import { qcImage, qcLayout, qcScenario, type QcIssue } from '../engine/quality.ts'
 import { PaymentScreen } from './PaymentScreen.tsx'
+import { SkinGallery } from './SkinGallery.tsx'
 
 type Accepted = {
   scenario: Scenario
@@ -192,9 +193,17 @@ export function Studio() {
   }
 
   const blocked = !rates || !rates.ok
+  const skinsMode = new URLSearchParams(window.location.search).has('skins')
   const previewScale = scenario
     ? Math.min(1, 360 / scenario.device.width, 680 / scenario.device.height)
     : 1
+
+  if (skinsMode) {
+    if (!rates?.ok) {
+      return <div className="empty">{rates && !rates.ok ? rates.message : 'Loading live market data…'}</div>
+    }
+    return <SkinGallery rates={rates} />
+  }
 
   return (
     <div className="studio" data-ready={lastPng ? '1' : '0'} data-busy={busy ? '1' : '0'}>
