@@ -140,6 +140,7 @@ function expandTurns(
       continue
     }
     if ('ph' in turn) {
+      const aspect = chance(rng, 0.48) ? 'port' : chance(rng, 0.55) ? 'land' : 'square'
       out.push({
         id,
         from: who.from,
@@ -148,6 +149,7 @@ function expandTurns(
         time,
         status,
         photo: pickPhoto(rng),
+        photoAspect: aspect,
         text: turn.t,
         reactions,
       })
@@ -208,7 +210,10 @@ export function createChatScenario(rng: Rng, seed: number, opts: ChatGenOpts): C
   const skin = skinById(opts.skinId)
   const device = skin.platform === 'ios' ? sampleIphone(rng) : sampleAndroidPhone(rng)
   const fontScale = sampleFontScale(rng, device.family)
-  const script = pick(rng, scriptsFor(loc.id))
+  const allScripts = scriptsFor(loc.id)
+  const photoScripts = allScripts.filter((s) => s.turns.some((t) => 'ph' in t))
+  const script =
+    photoScripts.length && chance(rng, 0.58) ? pick(rng, photoScripts) : pick(rng, allScripts)
   const kind = script.kind
 
   const members: ChatPeer[] =

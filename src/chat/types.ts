@@ -59,6 +59,7 @@ export type ChatMessage = {
   voiceDuration?: string
   voiceProgress?: number
   photo?: string
+  photoAspect?: 'land' | 'port' | 'square'
   sticker?: string
   status?: MsgStatus
   reactions?: { emoji: string; count: number }[]

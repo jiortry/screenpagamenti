@@ -155,16 +155,17 @@ function BubbleShell({
       style={{
         position: 'relative',
         display: 'inline-block',
-        maxWidth: '78%',
-        background: bg,
+        maxWidth: photo ? '100%' : '78%',
+        background: photo ? 'transparent' : bg,
         color: mine ? skin.outFg : skin.inFg,
         borderRadius: br,
-        boxShadow: photo ? 'none' : '0 1px 1px rgba(0,0,0,0.08)',
-        padding: photo ? 2 : '7px 11px 5px 10px',
+        boxShadow: photo ? 'none' : '0 1px 1.5px rgba(0,0,0,0.12)',
+        padding: photo ? 0 : '7px 12px 6px 11px',
+        overflow: photo ? 'visible' : 'visible',
       }}
     >
       {children}
-      {tail && <Tail side={mine ? 'out' : 'in'} color={bg} />}
+      {tail && !photo && <Tail side={mine ? 'out' : 'in'} color={bg} />}
     </div>
   )
 }
@@ -207,7 +208,7 @@ function TextBody({
           </span>
         </div>
       )}
-      <span style={{ fontSize: 16, lineHeight: 1.28, wordBreak: 'break-word', color: mine ? skin.outFg : skin.inFg }}>
+      <span style={{ fontSize: skin.platform === 'ios' ? 17 : 16, lineHeight: 1.28, wordBreak: 'break-word', color: mine ? skin.outFg : skin.inFg }}>
         {m.text}
         <span style={{ display: 'inline-block', width: m.status ? 54 : 36, height: 11 }} />
       </span>
@@ -237,7 +238,7 @@ function VoiceBody({ m, skin, mine, editedLabel }: { m: ChatMessage; skin: TgSki
   const playing = played > 0 && played < 1
   const playColor = mine ? skin.voicePlay : skin.accent
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 168, padding: '2px 36px 10px 2px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 196, padding: '2px 36px 10px 2px' }}>
       <span
         style={{
           width: 36,
@@ -276,35 +277,67 @@ function VoiceBody({ m, skin, mine, editedLabel }: { m: ChatMessage; skin: TgSki
   )
 }
 
-function PhotoBody({ m, skin, mine }: { m: ChatMessage; skin: TgSkin; mine: boolean }) {
+function photoSize(deviceWidth: number, aspect: ChatMessage['photoAspect'] = 'land') {
+  const w = Math.round(Math.min(deviceWidth * 0.88, deviceWidth - 12))
+  if (aspect === 'port') return { w, h: Math.round(w * 1.32) }
+  if (aspect === 'square') return { w, h: w }
+  return { w, h: Math.round(w * 0.82) }
+}
+
+function PhotoBody({
+  m,
+  skin,
+  mine,
+  width,
+}: {
+  m: ChatMessage
+  skin: TgSkin
+  mine: boolean
+  width: number
+}) {
+  const { w, h } = photoSize(width, m.photoAspect)
+  const radius = 15
   return (
-    <div style={{ position: 'relative', width: 212, maxWidth: '100%' }}>
+    <div style={{ position: 'relative', width: w, maxWidth: '100%' }}>
       <img
         src={m.photo}
         alt=""
-        style={{ display: 'block', width: '100%', height: 158, objectFit: 'cover', borderRadius: 12 }}
+        style={{
+          display: 'block',
+          width: w,
+          height: h,
+          maxWidth: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
+          borderRadius: radius,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.18)',
+        }}
       />
       {m.text && (
-        <div style={{ padding: '6px 10px 16px', fontSize: 15 }}>{m.text}</div>
+        <div style={{ padding: '8px 12px 18px', fontSize: 16, lineHeight: 1.28, color: mine ? skin.outFg : skin.inFg }}>
+          {m.text}
+        </div>
       )}
       <span
         style={{
           position: 'absolute',
-          right: 8,
-          bottom: m.text ? 4 : 8,
+          right: 7,
+          bottom: m.text ? 5 : 8,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 3,
           fontSize: 11,
-          color: m.text ? (mine ? skin.outTime : skin.inTime) : '#fff',
-          textShadow: m.text ? 'none' : '0 1px 2px rgba(0,0,0,0.55)',
-          background: m.text ? 'transparent' : 'rgba(0,0,0,0.28)',
-          borderRadius: 8,
-          padding: m.text ? 0 : '2px 6px',
+          fontWeight: 500,
+          color: '#fff',
+          textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+          background: 'rgba(0,0,0,0.38)',
+          borderRadius: 10,
+          padding: '2px 6px 2px 7px',
+          letterSpacing: 0.2,
         }}
       >
         {m.time}
-        {mine && m.status && <TgChecks status={m.status} color={m.text ? skin.check : '#fff'} read={m.text ? skin.checkRead : '#fff'} />}
+        {mine && m.status && <TgChecks status={m.status} color="#fff" read="#fff" />}
       </span>
     </div>
   )
@@ -418,7 +451,7 @@ function MessageRow({
         justifyContent: mine ? 'flex-end' : 'flex-start',
         alignItems: 'flex-end',
         gap: 6,
-        paddingInline: 4,
+        paddingInline: m.kind === 'photo' ? 5 : 4,
         position: 'relative',
         marginBottom: m.reactions?.length ? 10 : 0,
       }}
@@ -428,13 +461,20 @@ function MessageRow({
           {showAvatar ? <Avatar peer={peer} size={32} /> : null}
         </span>
       )}
-      <div style={{ maxWidth: '86%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+      <div style={{ maxWidth: m.kind === 'photo' ? '96%' : '82%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
         {showName && !mine && s.kind === 'group' && (
           <div style={{ fontSize: 13, fontWeight: 650, color: peer.color, padding: '0 10px 2px' }}>{peer.name}</div>
         )}
         <BubbleShell mine={mine} skin={skin} tail={tail} photo={m.kind === 'photo'}>
           {m.kind === 'voice' && <VoiceBody m={m} skin={skin} mine={mine} editedLabel={ui.edited} />}
-          {m.kind === 'photo' && <PhotoBody m={m} skin={skin} mine={mine} />}
+          {m.kind === 'photo' && (
+            <PhotoBody
+              m={m}
+              skin={skin}
+              mine={mine}
+              width={s.device.width - (s.kind === 'group' && !mine ? 42 : 8)}
+            />
+          )}
           {m.kind === 'text' && <TextBody m={m} skin={skin} mine={mine} ui={ui} />}
           {m.reactions && <Reactions items={m.reactions} />}
         </BubbleShell>
@@ -451,7 +491,7 @@ function Header({ s, skin }: { s: ChatScenario; skin: TgSkin }) {
   return (
     <div
       style={{
-        height: ios ? 44 : 56,
+        height: ios ? 48 : 56,
         display: 'flex',
         alignItems: 'center',
         gap: ios ? 8 : 10,
@@ -465,7 +505,7 @@ function Header({ s, skin }: { s: ChatScenario; skin: TgSkin }) {
       <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: ios ? skin.accent : skin.headerFg, minWidth: 28 }}>
         <TgBack color={ios ? skin.accent : skin.headerFg} android={!ios} />
       </span>
-      <Avatar peer={s.peer} size={ios ? 36 : 40} online={s.kind === 'dm' && s.peer.online} />
+      <Avatar peer={s.peer} size={ios ? 40 : 44} online={s.kind === 'dm' && s.peer.online} />
       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 650, fontSize: ios ? 16 : 17 }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.peer.name}</span>

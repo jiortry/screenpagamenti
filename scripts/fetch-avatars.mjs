@@ -73,7 +73,7 @@ const PICSUM = [237, 292, 433, 582, 628, 766, 823, 888, 1015, 1016, 1025, 1036, 
 PICSUM.forEach((id, i) => {
   JOBS.push({
     file: join(PHOTOS, `p${String(i).padStart(2, '0')}.jpg`),
-    url: `https://picsum.photos/id/${id}/720/540`,
+    url: `https://picsum.photos/id/${id}/1080/1440`,
   })
 })
 

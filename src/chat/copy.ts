@@ -241,6 +241,7 @@ const IT: Script[] = [
       { a: 'me', v: '0:07' },
       { a: 'them', t: 'Perfetto 👍' },
       { a: 'them', ph: true },
+      { a: 'me', ph: true },
       { a: 'me', t: 'Arrivato' },
     ],
   },
@@ -296,6 +297,7 @@ const IT: Script[] = [
     turns: [
       { d: 'today' },
       { a: 'them', t: 'Guarda sta foto' },
+      { a: 'them', ph: true },
       { a: 'them', ph: true },
       { a: 'me', t: 'Nooo incredibile 😂' },
       { a: 'them', t: 'Giuro è successa stamattina' },
